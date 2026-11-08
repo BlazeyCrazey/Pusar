@@ -1,30 +1,10 @@
 // Finds Roblox player installs on Windows and macOS.
-import { execFile } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import os from "node:os";
 import path from "node:path";
 
-export type Platform = "win32" | "darwin";
+import type { Platform, RobloxInstall } from "../shared/types";
 
-export interface RobloxInstall {
-  platform: Platform;
-  /** Who manages this copy: Roblox itself or another bootstrapper. */
-  source: string;
-  /** `version-<hash>` on Windows, bundle version on macOS. */
-  versionId: string | null;
-  /** RobloxPlayerBeta.exe (Windows) or Roblox.app (macOS). */
-  playerPath: string;
-  /** Version folder (Windows) or the .app bundle (macOS). */
-  rootDir: string;
-  contentDir: string;
-  clientSettingsFile: string;
-  logsDir: string;
-  /** True when roblox-player: links currently open this copy. */
-  isProtocolHandler: boolean;
-  /** True when content/fonts/families exists, so font mods can apply. */
-  hasFontFamilies: boolean;
-  modifiedAt: number;
-}
+export type { Platform, RobloxInstall };
 
 /** Version folders managed by other bootstrappers, relative to %LOCALAPPDATA%. */
 const WINDOWS_ROOTS: Array<{ dir: string; source: string }> = [
@@ -140,33 +120,4 @@ function sortInstalls(installs: RobloxInstall[]): RobloxInstall[] {
     if (a.isProtocolHandler !== b.isProtocolHandler) return a.isProtocolHandler ? -1 : 1;
     return b.modifiedAt - a.modifiedAt;
   });
-}
-
-export function readWindowsProtocolHandler(): Promise<string | null> {
-  return new Promise((resolve) => {
-    execFile(
-      "reg",
-      ["query", "HKCU\\Software\\Classes\\roblox-player\\shell\\open\\command", "/ve"],
-      { windowsHide: true },
-      (err, stdout) => {
-        if (err) return resolve(null);
-        const match = /REG_(?:EXPAND_)?SZ\s+(.+)$/m.exec(stdout);
-        resolve(match?.[1]?.trim() ?? null);
-      },
-    );
-  });
-}
-
-export async function detectInstalls(): Promise<RobloxInstall[]> {
-  if (process.platform === "win32") {
-    const localAppData = process.env.LOCALAPPDATA ?? path.join(os.homedir(), "AppData", "Local");
-    return findWindowsInstalls({
-      localAppData,
-      protocolHandlerCommand: await readWindowsProtocolHandler(),
-    });
-  }
-  if (process.platform === "darwin") {
-    return findMacInstalls({ home: os.homedir() });
-  }
-  return [];
 }

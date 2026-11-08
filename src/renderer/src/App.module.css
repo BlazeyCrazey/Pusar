@@ -1,0 +1,17 @@
+.app {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  grid-template-rows: var(--titlebar-h) minmax(0, 1fr) var(--statusbar-h);
+  grid-template-areas:
+    "title title"
+    "rail content"
+    "status status";
+  height: 100%;
+}
+
+.content {
+  grid-area: content;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}

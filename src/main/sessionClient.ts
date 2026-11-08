@@ -1,8 +1,8 @@
 // Makes authenticated Roblox requests for one account, from inside that
 // account's own browser partition (see PLAN.md §5.3).
 import { BrowserWindow, session, type Session } from "electron";
-import { readFileSync } from "node:fs";
-import path from "node:path";
+import pageScript from "virtual:roblox-session-page";
+import type { HbaDiagnosis, LaunchResult } from "../shared/types";
 import { errorMessage, log } from "./logger";
 import { hardenSession, headerValue, lockToRoblox } from "./robloxWeb";
 
@@ -26,28 +26,14 @@ export interface PageResponse {
   notes: string[];
 }
 
-export interface HbaDiagnosis {
-  metadataFound: boolean;
-  isAuthenticated?: boolean;
-  secureAuthIntentEnabled?: boolean;
-  batEnabledForAllUrls?: boolean;
-  whitelistSites?: string[];
-  exemptSites?: string[];
-  hasKeyPair: boolean;
-  error?: string;
-}
-
 export interface TicketResult {
   ticket: string;
-  /** page = read by the page script; page-webRequest = captured from the response by Electron; native = Node fetch with the cookie. */
-  via: "page" | "page-webRequest" | "native";
+  via: LaunchResult["via"];
   signed: boolean;
   notes: string[];
 }
 
-let pageScript: string | null = null;
 export function getPageScript(): string {
-  pageScript ??= readFileSync(path.join(__dirname, "page", "robloxSession.js"), "utf8");
   return pageScript;
 }
 

@@ -2,85 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://tr.rbxcdn.com data:; connect-src 'none'"
-    />
-    <title>Pusar · M0 spike panel</title>
-    <link rel="stylesheet" href="panel.css" />
+    <title>Pusar</title>
   </head>
   <body>
-    <header>
-      <div>
-        <h1>Pusar <span class="muted">M0 spike panel</span></h1>
-        <p class="muted">Test tool for the risky parts. Not the real UI.</p>
-      </div>
-      <button id="copy-report" class="secondary">Copy spike report</button>
-    </header>
-
-    <main>
-      <div class="controls">
-        <section>
-          <h2>1 · Roblox install</h2>
-          <div class="row"><button id="detect">Detect installs</button></div>
-          <div id="installs" class="list"><p class="muted">Not detected yet.</p></div>
-        </section>
-
-        <section>
-          <h2>2 · Mods <span class="muted">(spike 2)</span></h2>
-          <p class="muted">
-            Changes the selected install. Every change is backed up; Revert restores Roblox's original files.
-          </p>
-          <div class="row">
-            <button id="apply-flags">Apply test FFlags</button>
-            <button id="apply-font">Apply custom font…</button>
-            <button id="revert" class="danger">Revert all</button>
-          </div>
-          <div id="mods-status" class="mono small muted"></div>
-        </section>
-
-        <section>
-          <h2>3 · Accounts <span class="muted">(spike 1)</span></h2>
-          <p class="muted">Opens the real roblox.com login page. You type your password there, not here.</p>
-          <div class="row"><button id="add-account">Add account</button></div>
-          <div id="accounts" class="list"></div>
-        </section>
-
-        <section>
-          <h2>4 · Launch <span class="muted">(spike 1)</span></h2>
-          <label>Place ID or roblox.com game link
-            <input id="place" placeholder="e.g. 1818 or https://www.roblox.com/games/1818/…" />
-          </label>
-          <label>Account
-            <select id="launch-account"></select>
-          </label>
-          <div class="row">
-            <button id="launch">Launch game</button>
-            <button id="open-app" class="secondary">Open Roblox app (no login)</button>
-          </div>
-        </section>
-
-        <section>
-          <h2>5 · Activity + Discord <span class="muted">(spike 3)</span></h2>
-          <label>Discord application ID <span class="muted">(optional; blank = dry run)</span>
-            <input id="discord-id" placeholder="from discord.com/developers/applications" />
-          </label>
-          <label class="check"><input type="checkbox" id="follow-existing" /> Follow the newest existing log (replay)</label>
-          <div class="row">
-            <button id="activity-start">Start watching</button>
-            <button id="activity-stop" class="secondary">Stop</button>
-          </div>
-          <div id="activity" class="activity muted">Not watching.</div>
-        </section>
-      </div>
-
-      <aside>
-        <h2>Log <span class="muted">(credentials are redacted)</span></h2>
-        <pre id="log"></pre>
-      </aside>
-    </main>
-
-    <div id="toast" hidden></div>
-    <script src="panel.js"></script>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

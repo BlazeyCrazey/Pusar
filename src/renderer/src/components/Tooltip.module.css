@@ -1,0 +1,9 @@
+.content {
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: var(--fs-12);
+  z-index: 50;
+}

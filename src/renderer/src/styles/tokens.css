@@ -1,0 +1,62 @@
+/* Pusar design tokens (PLAN.md §7). Components use these and never raw values. */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces: near-black, slightly warm. */
+  --bg-app: #0f1012;
+  --bg-surface: #16171a;
+  --bg-raised: #1d1f23;
+  --bg-hover: #25282d;
+  --bg-active: #2e3137;
+
+  --line: #2a2c31;
+  --line-strong: #3b3e45;
+
+  --text: #ececee;
+  --text-2: #a4a7ae;
+  --text-3: #858992;
+
+  /* The one accent. Only for the primary action and active state. */
+  --accent: #f2ab34;
+  --accent-hover: #f7bb57;
+  --accent-press: #e09a25;
+  --on-accent: #1b1305;
+
+  /* Status only. */
+  --ok: #62c587;
+  --warn: #ec8b3f;
+  --danger: #e8605a;
+
+  /* 4px spacing grid. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-15: 15px;
+  --fs-18: 18px;
+  --fs-24: 24px;
+  --fs-32: 32px;
+
+  /* Two radii only. */
+  --r-sm: 4px;
+  --r-md: 8px;
+
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --font-ui: "Instrument Sans Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", Consolas, monospace;
+
+  --titlebar-h: 40px;
+  --statusbar-h: 28px;
+  --rail-w: 76px;
+  --control-h: 32px;
+}

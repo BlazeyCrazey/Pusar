@@ -1,6 +1,7 @@
 // Reads and writes ClientAppSettings.json (local FFlag overrides).
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import type { FlagStatus } from "../shared/types";
 import type { BackupStore } from "./backup";
 
 export type FlagValue = string | number | boolean;
@@ -39,8 +40,6 @@ export const FLAG_PRESETS: Record<string, { label: string; flags: FlagMap }> = {
     flags: { FFlagDebugSkyGray: true },
   },
 };
-
-export type FlagStatus = "allowed" | "unknown";
 
 export function flagStatus(name: string): FlagStatus {
   return Object.hasOwn(ALLOWED_FLAGS, name) ? "allowed" : "unknown";

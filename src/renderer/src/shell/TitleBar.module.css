@@ -1,0 +1,15 @@
+.bar {
+  grid-area: title;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-left: 29px; /* Centers the mark over the nav rail. */
+  /* Lets the window be dragged by this bar. */
+  -webkit-app-region: drag;
+}
+
+.name {
+  font-size: var(--fs-13);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}

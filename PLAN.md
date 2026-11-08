@@ -49,6 +49,7 @@ Other libraries:
 - **State and validation:** Zustand, zod
 - **Discord:** `@xhayper/discord-rpc`
 - **Testing:** Vitest, Playwright, MSW (mocks HTTP responses)
+- **TypeScript:** pinned to 6.0, because typescript-eslint doesn't support 7 yet
 
 ---
 
@@ -69,6 +70,9 @@ renderer (React UI)  ⇄  preload (contextBridge, typed API)  ⇄  main
 
 Security baseline:
 - Turn on `contextIsolation` and `sandbox`, and turn off `nodeIntegration`. Use a strict CSP.
+- Serve the UI from `pusar://app/` rather than `file://`, and send the CSP as a response header.
+- Validate every IPC message with zod, and accept IPC only from the top frame of Pusar's own page.
+- Developer switches (`--spike`, `--selftest`) and the dev-server variable are ignored in packaged builds.
 - **The renderer never sees cookies or tickets.** It only gets user IDs, names and avatars.
 - Login windows load only `https://*.roblox.com` pages. Block every other navigation and pop-up, and don't give login windows a preload script.
 - Electron fuses:
@@ -255,7 +259,7 @@ Fake launchers that steal cookies are common Roblox malware, so users will be su
 
 _Exit criteria:_ all three work on Windows. If not, revisit this plan. **Met on 2026-11-08** (see [docs/M0-SPIKES.md](docs/M0-SPIKES.md)).
 
-**M1: Foundation.** Repo, electron-vite, strict TypeScript, linting, the CI matrix, test harness, typed IPC, security baseline, design tokens and base components.
+**M1: Foundation.** Repo, electron-vite, strict TypeScript, linting, the CI matrix, test harness, typed IPC, security baseline, design tokens and base components. **Done on 2026-11-08**, except that the CI workflow hasn't run yet because the project has no GitHub repo. The M0 test panel (`npm run spike`) stays until real screens replace it, and it doesn't ship in packaged builds.
 
 **M2: Accounts and launching.** Add, remove and switch accounts; search for and launch games; join by link; the `roblox-player:` handler on Windows.
 

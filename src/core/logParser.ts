@@ -1,6 +1,8 @@
 // Parses Roblox player log lines into game activity events.
 // Line format: "2026-07-25T01:22:24.128Z,381.128357,7438,6 [FLog::Output] ! Joining game '<jobId>' place <placeId> at <ip>"
 
+import type { ActivityState, ServerType } from "../shared/types";
+
 export type LogEvent =
   | { type: "joining"; jobId: string; placeId: string; ip: string; at?: number }
   | { type: "joinReport"; placeId: string; universeId: string; userId: string; at?: number }
@@ -53,20 +55,7 @@ export function parseLogLine(line: string): LogEvent | null {
   return null;
 }
 
-export type ServerType = "public" | "private" | "reserved";
-
-export interface ActivityState {
-  status: "idle" | "joining" | "inGame";
-  placeId?: string;
-  universeId?: string;
-  jobId?: string;
-  serverIp?: string;
-  serverType: ServerType;
-  joinedAt?: number;
-  teleporting: boolean;
-  /** Server type announced before the next "joining" line. */
-  pendingServerType?: ServerType;
-}
+export type { ActivityState, ServerType };
 
 export const IDLE: ActivityState = { status: "idle", serverType: "public", teleporting: false };
 

@@ -5,6 +5,7 @@
 import { copyFile, readdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import type { FontApplyResult } from "../shared/types";
 import type { BackupStore } from "./backup";
 
 /** Families we never touch: replacing these breaks non-Latin text and emoji. */
@@ -16,12 +17,6 @@ interface FamilyFile {
   name?: string;
   faces?: Array<{ assetId?: string; [key: string]: unknown }>;
   [key: string]: unknown;
-}
-
-export interface FontApplyResult {
-  fontTarget: string;
-  familiesUpdated: string[];
-  familiesSkipped: string[];
 }
 
 export async function applyCustomFont(

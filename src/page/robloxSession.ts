@@ -38,7 +38,6 @@ interface PusarPage {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var __pusar: PusarPage | undefined;
 }
 

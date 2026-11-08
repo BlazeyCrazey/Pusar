@@ -1,0 +1,29 @@
+appId: com.pusarlauncher.app
+productName: Pusar
+directories:
+  output: release
+files:
+  - out/**
+  # The M0 test panel never ships.
+  - "!out/renderer/spike.html"
+  - "!out/renderer/assets/spike*"
+asar: true
+
+# Hardens the Electron binary itself (PLAN.md §4).
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  grantFileProtocolExtraPrivileges: false
+
+win:
+  target:
+    - nsis
+
+# Installs per-user, so no admin rights are needed.
+nsis:
+  oneClick: true
+  perMachine: false

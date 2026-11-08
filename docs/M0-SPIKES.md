@@ -94,7 +94,7 @@ macOS is deferred. The macOS code paths stay in the repo but have never run on a
 npm install
 npm test            # unit tests
 npm run selftest    # offline checks inside Electron, prints JSON
-npm start           # opens the spike panel
+npm run spike       # opens the spike panel
 ```
 
 Pusar's data (account list, backups and per-account browser profiles) is stored in `%APPDATA%\Pusar` on Windows and `~/Library/Application Support/Pusar` on macOS.
@@ -116,7 +116,7 @@ Do these with Roblox reachable. When finished, click **Copy spike report** in th
    - **`device key=true` is the key finding:** Roblox stored a signing key in this account's browser profile, so signed requests are possible.
 3. Enter a place ID, such as a game you play, and click **Launch game**. Roblox should open straight into that game.
    - The confirmation message shows how the ticket was obtained: `via page` or `page-webRequest` (good) or `via native` (the fallback, which will stop working once Roblox enforces device-bound sessions).
-4. Quit the app, run `npm start` again, and launch again without signing in. This proves the session survives a restart.
+4. Quit the app, run `npm run spike` again, and launch again without signing in. This proves the session survives a restart.
 5. Click **Remove**. The account should be signed out on Roblox's side too.
 
 **Spike 3: activity and Discord**
@@ -135,6 +135,6 @@ Do these with Roblox reachable. When finished, click **Copy spike report** in th
    - Do the paths in `src/core/install.ts` match the real app (`Contents/Resources/content`, `Contents/MacOS/ClientSettings`) and the logs folder (`~/Library/Logs/Roblox`)?
 
 ## Known gaps (deliberately left for later milestones)
-- **Cookie encryption:** the Electron fuses that encrypt cookies at rest aren't turned on yet, because fuses are set when the app is packaged (M1/M6).
+- **Cookie encryption:** on in packaged builds since M1. Running from source (`npm start`, `npm run spike`) doesn't use fuses, so sessions from those runs aren't encrypted at rest.
 - **Mods and Roblox updates:** mods are applied to Roblox's own install, so a Roblox update replaces them. Bootstrapper mode and reapplying mods automatically are M3.
-- **Spike panel:** the panel is a test tool. The real UI starts in M1/M5, following PLAN.md §7.
+- **Spike panel:** the panel is a test tool. It runs with `npm run spike`, doesn't ship in packaged builds, and goes away as real screens replace it.

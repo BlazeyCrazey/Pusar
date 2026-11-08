@@ -1,16 +1,11 @@
 // Ties the log watcher, game lookups and Discord presence together.
 import path from "node:path";
-import { buildPresence, DiscordPresence, type PresencePayload } from "../core/discord";
+import { buildPresence, DiscordPresence } from "../core/discord";
 import { IDLE, reduceActivity, type ActivityState, type LogEvent } from "../core/logParser";
 import { RobloxLogWatcher } from "../core/logWatcher";
-import { getGameInfo, getUniverseId, type GameInfo } from "../core/robloxApi";
+import { getGameInfo, getUniverseId } from "../core/robloxApi";
+import type { ActivityUpdate, GameInfo } from "../shared/types";
 import { errorMessage, log } from "./logger";
-
-export interface ActivityUpdate {
-  state: ActivityState;
-  game: GameInfo | null;
-  presence: PresencePayload | null;
-}
 
 export class ActivityService {
   private watcher: RobloxLogWatcher | null = null;

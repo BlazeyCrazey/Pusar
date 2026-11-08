@@ -7,16 +7,8 @@ import path from "node:path";
 import { ensureRobloxReachable } from "./robloxWeb";
 import { runLoginWindow } from "./loginWindow";
 import { errorMessage, log } from "./logger";
-import { RobloxSessionClient, type HbaDiagnosis } from "./sessionClient";
-
-export interface StoredAccount {
-  id: string;
-  partition: string;
-  userId: number;
-  username: string;
-  displayName: string;
-  addedAt: string;
-}
+import { RobloxSessionClient } from "./sessionClient";
+import type { AddAccountResult, HbaDiagnosis, StoredAccount } from "../shared/types";
 
 const storePath = () => path.join(app.getPath("userData"), "accounts.json");
 
@@ -58,12 +50,6 @@ async function discardPartition(partition: string): Promise<void> {
   clients.get(partition)?.dispose();
   clients.delete(partition);
   await session.fromPartition(partition).clearStorageData();
-}
-
-export interface AddAccountResult {
-  account: StoredAccount | null;
-  diagnosis?: HbaDiagnosis;
-  duplicate?: boolean;
 }
 
 export async function addAccount(parent?: BrowserWindow): Promise<AddAccountResult> {

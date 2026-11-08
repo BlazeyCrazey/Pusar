@@ -1,12 +1,8 @@
 // Public (no login) Roblox web API lookups used for presence and the library.
 
-export interface GameInfo {
-  universeId: string;
-  name: string;
-  rootPlaceId?: string;
-  creatorName?: string;
-  iconUrl?: string;
-}
+import type { GameInfo } from "../shared/types";
+
+export type { GameInfo };
 
 async function getJson<T>(url: string): Promise<T | null> {
   try {

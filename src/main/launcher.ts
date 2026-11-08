@@ -1,35 +1,24 @@
 // Starts the Roblox player.
-import { spawn } from "node:child_process";
-import type { RobloxInstall } from "../core/install";
 import {
   buildLaunchUri,
   buildPlaceLauncherUrl,
   generateBrowserTrackerId,
   type PlaceTarget,
 } from "../core/launchUri";
-import { clientFor, type StoredAccount } from "./accounts";
+import type { LaunchResult, RobloxInstall, StoredAccount } from "../shared/types";
+import { clientFor } from "./accounts";
 import { log } from "./logger";
-import type { TicketResult } from "./sessionClient";
+import { currentPlatform } from "./platform";
 
-/** With no argument, opens the Roblox app home screen (no game, no Pusar login). */
-export function spawnRoblox(install: RobloxInstall, arg?: string): void {
-  const child =
-    install.platform === "win32"
-      ? spawn(install.playerPath, arg ? [arg] : ["--app"], {
-          cwd: install.rootDir,
-          detached: true,
-          stdio: "ignore",
-        })
-      : // macOS hands the URI to the app the same way clicking a link does.
-        spawn("open", ["-a", install.playerPath, ...(arg ? [arg] : [])], { detached: true, stdio: "ignore" });
+function start(install: RobloxInstall, launchUri?: string): void {
+  const child = currentPlatform().spawnPlayer(install, launchUri);
   child.on("error", (err) => log(`Could not start Roblox: ${err.message}`));
   child.unref();
 }
 
-export interface LaunchResult {
-  via: TicketResult["via"];
-  signed: boolean;
-  notes: string[];
+/** Opens the Roblox app's home screen, with no game and no Pusar sign-in. */
+export function openRobloxApp(install: RobloxInstall): void {
+  start(install);
 }
 
 export async function launchPlace(
@@ -43,12 +32,14 @@ export async function launchPlace(
   log(`Launch: got ticket via ${ticket.via} (signed=${ticket.signed})`);
 
   const browserTrackerId = generateBrowserTrackerId();
-  const uri = buildLaunchUri({
-    ticket: ticket.ticket,
-    placeLauncherUrl: buildPlaceLauncherUrl(target, browserTrackerId),
-    browserTrackerId,
-  });
-  spawnRoblox(install, uri);
+  start(
+    install,
+    buildLaunchUri({
+      ticket: ticket.ticket,
+      placeLauncherUrl: buildPlaceLauncherUrl(target, browserTrackerId),
+      browserTrackerId,
+    }),
+  );
   log(`Launch: started Roblox for place ${target.placeId}${target.jobId ? ` (server ${target.jobId})` : ""}`);
   return { via: ticket.via, signed: ticket.signed, notes: ticket.notes };
 }

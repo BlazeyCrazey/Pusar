@@ -1,0 +1,44 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 60%);
+  animation: fade var(--dur-base) var(--ease);
+  z-index: 30;
+}
+
+.content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: min(440px, calc(100vw - var(--sp-7)));
+  padding: var(--sp-5);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--bg-raised);
+  transform: translate(-50%, -50%);
+  animation: fade var(--dur-base) var(--ease);
+  z-index: 31;
+}
+
+.title {
+  font-size: var(--fs-18);
+  font-weight: 600;
+}
+
+.description {
+  margin-top: var(--sp-2);
+  color: var(--text-2);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}

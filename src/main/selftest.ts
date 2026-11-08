@@ -10,12 +10,12 @@ import { BackupStore } from "../core/backup";
 import { buildPresence } from "../core/discord";
 import { applyFlags, FLAG_PRESETS } from "../core/fflags";
 import { applyCustomFont } from "../core/fonts";
-import { detectInstalls } from "../core/install";
 import { buildLaunchUri, buildPlaceLauncherUrl } from "../core/launchUri";
 import { IDLE, parseLogLine, reduceActivity, type LogEvent } from "../core/logParser";
 import { isPlayerLog } from "../core/logWatcher";
 import { checkRobloxReachable } from "../core/network";
 import { redact } from "../core/redact";
+import { currentPlatform } from "./platform";
 import { chromiumLookup } from "./robloxWeb";
 import { getPageScript } from "./sessionClient";
 
@@ -45,7 +45,7 @@ export async function runSelfTest(): Promise<number> {
     }
   };
 
-  const installs = await detectInstalls();
+  const installs = await currentPlatform().detectInstalls();
   const install = installs[0];
 
   await check("detectInstalls", async () => ({

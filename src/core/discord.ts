@@ -1,17 +1,9 @@
 // Discord Rich Presence for the current Roblox game.
 import type { Client } from "@xhayper/discord-rpc";
 import type { ActivityState } from "./logParser";
-import type { GameInfo } from "./robloxApi";
+import type { GameInfo, PresencePayload } from "../shared/types";
 
-/** Subset of the RPC library's SetActivity that Pusar uses. */
-export interface PresencePayload {
-  details?: string;
-  state?: string;
-  startTimestamp?: number;
-  largeImageKey?: string;
-  largeImageText?: string;
-  buttons?: Array<{ label: string; url: string }>;
-}
+export type { PresencePayload };
 
 const SERVER_LABEL = {
   public: "Public server",
