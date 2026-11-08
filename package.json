@@ -1,0 +1,26 @@
+{
+  "name": "pusar",
+  "productName": "Pusar",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Pusar Launcher - M0 spike",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/build.mjs && electron .",
+    "selftest": "node scripts/build.mjs && electron . --selftest",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@xhayper/discord-rpc": "^1.5.1",
+    "roblox-bat": "^0.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "electron": "^45.2.3",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
