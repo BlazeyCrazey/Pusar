@@ -4,6 +4,8 @@ directories:
   output: release
 files:
   - out/**
+  # Images the main process loads directly, such as the tray icon.
+  - resources/**
   # The M0 test panel never ships.
   - "!out/renderer/spike.html"
   - "!out/renderer/assets/spike*"

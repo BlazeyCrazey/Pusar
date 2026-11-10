@@ -2,6 +2,7 @@
 // account's own browser partition (see PLAN.md §5.3).
 import { BrowserWindow, session, type Session } from "electron";
 import pageScript from "virtual:roblox-session-page";
+import { SESSION_ENDED } from "../shared/messages";
 import type { HbaDiagnosis, LaunchResult } from "../shared/types";
 import { errorMessage, log } from "./logger";
 import { hardenSession, headerValue, lockToRoblox } from "./robloxWeb";
@@ -10,6 +11,11 @@ const WORLD_ID = 1337;
 /** Any www.roblox.com page that carries the HBA metadata tag works. */
 const SESSION_PAGE = "https://www.roblox.com/charts";
 export const AUTH_TICKET_URL = "https://auth.roblox.com/v1/authentication-ticket/";
+
+/** The hidden page only needs its HTML, so skipping these makes launches much faster. */
+const SKIPPED_RESOURCES = new Set(["image", "media", "font", "stylesheet", "script", "subFrame", "object", "ping", "webSocket"]);
+/** Close the hidden page after this long without use, to free its memory. */
+const IDLE_CLOSE_MS = 120_000;
 
 export interface PageRequest {
   method: "GET" | "POST";
@@ -59,10 +65,16 @@ export class RobloxSessionClient {
   private loading: Promise<void> | null = null;
   private capturedTicket: string | null = null;
   private csrfToken: string | null = null;
+  private idleTimer: NodeJS.Timeout | undefined;
 
   constructor(readonly partition: string) {
     this.ses = session.fromPartition(partition);
     hardenSession(this.ses);
+
+    this.ses.webRequest.onBeforeRequest({ urls: ["*://*/*"] }, (details, callback) => {
+      const fromSessionPage = !!this.win && !this.win.isDestroyed() && details.webContentsId === this.win.webContents.id;
+      callback({ cancel: fromSessionPage && SKIPPED_RESOURCES.has(details.resourceType) });
+    });
 
     // Roblox's CORS policy stops a page script from sending this header (the
     // preflight rejects it), so it is added at the network layer instead.
@@ -73,7 +85,8 @@ export class RobloxSessionClient {
     });
 
     // Page scripts can't read these response headers either, but Electron can.
-    this.ses.webRequest.onHeadersReceived({ urls: ["https://auth.roblox.com/*"] }, (details, callback) => {
+    // Any write on any Roblox host can be the one that hands out a new CSRF token.
+    this.ses.webRequest.onHeadersReceived({ urls: ["https://*.roblox.com/*"] }, (details, callback) => {
       const ticket = headerValue(details.responseHeaders, "rbx-authentication-ticket");
       if (ticket) this.capturedTicket = ticket;
       const csrf = headerValue(details.responseHeaders, "x-csrf-token");
@@ -104,7 +117,17 @@ export class RobloxSessionClient {
     if (!this.win || this.win.isDestroyed()) throw new Error("Session page closed");
     // The script guards itself, so re-sending it is harmless and survives page reloads.
     const code = `${getPageScript()}\n;(${expression})`;
-    return (await this.win.webContents.executeJavaScriptInIsolatedWorld(WORLD_ID, [{ code }], true)) as T;
+    try {
+      return (await this.win.webContents.executeJavaScriptInIsolatedWorld(WORLD_ID, [{ code }], true)) as T;
+    } finally {
+      this.scheduleIdleClose();
+    }
+  }
+
+  private scheduleIdleClose(): void {
+    clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => this.dispose(), IDLE_CLOSE_MS);
+    this.idleTimer.unref();
   }
 
   private attempt(req: PageRequest, csrfToken: string | null): Promise<PageResponse> {
@@ -138,21 +161,27 @@ export class RobloxSessionClient {
   /** Signed in-page request first; plain native request only as a fallback. */
   async getAuthTicket(): Promise<TicketResult> {
     const notes: string[] = [];
+    this.capturedTicket = null;
+
+    let res: PageResponse | null = null;
     try {
-      this.capturedTicket = null;
-      const res = await this.request({
+      res = await this.request({
         method: "POST",
         url: AUTH_TICKET_URL,
         body: {},
         exposeHeaders: ["rbx-authentication-ticket"],
       });
+    } catch (err) {
+      notes.push(`page request failed: ${errorMessage(err)}`);
+    }
+
+    if (res) {
       notes.push(`page request: HTTP ${res.status}, signed=${res.signed}`, ...res.notes);
+      if (res.status === 401) throw new Error(SESSION_ENDED);
       const fromPage = res.headers["rbx-authentication-ticket"];
       if (fromPage) return { ticket: fromPage, via: "page", signed: res.signed, notes };
       if (this.capturedTicket) return { ticket: this.capturedTicket, via: "page-webRequest", signed: res.signed, notes };
       notes.push(`no ticket in response: ${res.body.slice(0, 200) || "(empty body)"}`);
-    } catch (err) {
-      notes.push(`page request failed: ${errorMessage(err)}`);
     }
 
     log("Auth ticket: in-page request did not return a ticket, trying native fallback");
@@ -161,6 +190,7 @@ export class RobloxSessionClient {
   }
 
   dispose(): void {
+    clearTimeout(this.idleTimer);
     if (this.win && !this.win.isDestroyed()) this.win.destroy();
     this.win = null;
     this.loading = null;
@@ -169,7 +199,7 @@ export class RobloxSessionClient {
 
 /** Unsigned request with the cookie. Works only while Roblox accepts unsigned requests. */
 async function nativeAuthTicket(cookie: string | null, notes: string[]): Promise<string> {
-  if (!cookie) throw new Error("This account has no Roblox session. Remove it and sign in again.");
+  if (!cookie) throw new Error(SESSION_ENDED);
   const headers: Record<string, string> = {
     Cookie: `.ROBLOSECURITY=${cookie}`,
     Referer: "https://www.roblox.com/",
@@ -189,6 +219,7 @@ async function nativeAuthTicket(cookie: string | null, notes: string[]): Promise
   const csrf = res.headers.get("x-csrf-token");
   if (res.status === 403 && csrf) res = await post({ "X-CSRF-TOKEN": csrf });
   notes.push(`native request: HTTP ${res.status}`);
+  if (res.status === 401) throw new Error(SESSION_ENDED);
 
   const ticket = res.headers.get("rbx-authentication-ticket");
   if (!ticket) throw new Error(`Roblox did not return an auth ticket (HTTP ${res.status}).`);

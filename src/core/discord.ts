@@ -11,13 +11,13 @@ const SERVER_LABEL = {
   reserved: "Reserved server",
 } as const;
 
-export function buildPresence(state: ActivityState, game: GameInfo | null): PresencePayload | null {
+export function buildPresence(state: ActivityState, game: GameInfo | null, region?: string | null): PresencePayload | null {
   if (state.status === "idle" || !state.placeId) return null;
   const name = game?.name ?? "a Roblox experience";
 
   const payload: PresencePayload = {
     details: state.status === "joining" ? `Joining ${name}` : `Playing ${name}`,
-    state: SERVER_LABEL[state.serverType],
+    state: region ? `${SERVER_LABEL[state.serverType]} · ${region}` : SERVER_LABEL[state.serverType],
     largeImageText: name,
     buttons: [{ label: "View game", url: `https://www.roblox.com/games/${state.placeId}` }],
   };
@@ -84,10 +84,18 @@ export class DiscordPresence {
     private readonly log: (message: string) => void,
   ) {}
 
+  get isConnected(): boolean {
+    return this.connected;
+  }
+
   async connect(): Promise<boolean> {
     try {
       const { Client: RpcClient } = await import("@xhayper/discord-rpc");
       this.client = new RpcClient({ clientId: this.clientId });
+      // Discord closing or restarting shouldn't end presence for good: the next game reconnects.
+      this.client.on("disconnected", () => {
+        this.connected = false;
+      });
       await this.client.login();
       this.connected = true;
       this.log("Discord: connected");

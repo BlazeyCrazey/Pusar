@@ -20,6 +20,7 @@ const api: PusarApi = {
   invoke: invoke as PusarApi["invoke"],
   onLog: (callback) => subscribe("log", callback),
   onActivity: (callback) => subscribe("activity", callback),
+  onInstance: (callback) => subscribe("instance", callback),
 };
 
 contextBridge.exposeInMainWorld("pusar", api);

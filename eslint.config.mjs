@@ -25,6 +25,14 @@ export default defineConfig(
     },
   },
 
+  // Helpers that run directly under Node.
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: { process: "readonly", console: "readonly", setInterval: "readonly", clearInterval: "readonly" },
+    },
+  },
+
   // Architecture boundaries. These are errors so the layers can't quietly merge.
   {
     files: ["src/renderer/src/**/*.{ts,tsx}"],

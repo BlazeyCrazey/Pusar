@@ -7,9 +7,8 @@ import {
   UsersIcon,
   type Icon,
 } from "@phosphor-icons/react";
+import { useApp, type ViewId } from "../store";
 import styles from "./NavRail.module.css";
-
-export type ViewId = "play" | "library" | "mods" | "accounts" | "settings" | "gallery";
 
 interface NavItem {
   id: ViewId;
@@ -27,19 +26,17 @@ const MAIN_ITEMS: NavItem[] = [
 const SETTINGS_ITEM: NavItem = { id: "settings", label: "Settings", icon: GearSixIcon };
 const GALLERY_ITEM: NavItem = { id: "gallery", label: "Kit", icon: SwatchesIcon };
 
-interface NavRailProps {
-  active: ViewId;
-  onSelect: (view: ViewId) => void;
-}
+export function NavRail() {
+  const active = useApp((state) => state.view);
+  const setView = useApp((state) => state.setView);
 
-export function NavRail({ active, onSelect }: NavRailProps) {
   const renderItem = ({ id, label, icon: ItemIcon }: NavItem) => (
     <button
       key={id}
       type="button"
       className={styles.item}
       aria-current={active === id ? "page" : undefined}
-      onClick={() => onSelect(id)}
+      onClick={() => setView(id)}
     >
       <ItemIcon size={22} />
       <span>{label}</span>

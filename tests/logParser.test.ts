@@ -7,7 +7,7 @@ const PREFIX = "2026-07-25T01:22:24.128Z,381.128357,7438,6";
 const LINES = {
   joining: `${PREFIX} [FLog::Output] ! Joining game '${JOB}' place 1818 at 203.0.113.10`,
   report: `${PREFIX} [FLog::GameJoinLoadTime] Report game_join_loadtime: placeid:1818, join_time:1.42, universeid:13058, referral_page:GameDetailPageJSHybridEvent, sid:${JOB}, clienttime:1784942543.74, userid:99, `,
-  udmux: `${PREFIX} [FLog::Network] UDMUX Address = 203.0.113.10, Port = 59516 | RCC Server Address = 198.51.100.7, Port = 59516`,
+  udmux: `${PREFIX} [FLog::Network] UDMUX Address = 203.0.113.10, Port = 59516 | RCC Server Address = 10.32.41.202, Port = 59516`,
   joined: `2026-07-25T01:22:25.000Z,381.371063,20b0,7 [FLog::Network] serverId: 203.0.113.10|59516`,
   leaving: `${PREFIX} [FLog::SingleSurfaceApp] leaveUGCGameInternal`,
   disconnect: `${PREFIX} [FLog::Network] Time to disconnect replication data: 0.897000`,
@@ -39,8 +39,8 @@ describe("parseLogLine", () => {
     expect(parseLogLine(LINES.report)).toMatchObject({ type: "joinReport", placeId: "1818", universeId: "13058", userId: "99" });
   });
 
-  it("uses the RCC address from the UDMUX line", () => {
-    expect(parseLogLine(LINES.udmux)).toMatchObject({ type: "udmux", udmuxIp: "203.0.113.10", rccIp: "198.51.100.7" });
+  it("reads both addresses from the UDMUX line", () => {
+    expect(parseLogLine(LINES.udmux)).toMatchObject({ type: "udmux", udmuxIp: "203.0.113.10", rccIp: "10.32.41.202" });
   });
 
   it("ignores unrelated lines", () => {
@@ -57,7 +57,7 @@ describe("reduceActivity", () => {
       placeId: "1818",
       universeId: "13058",
       jobId: JOB,
-      serverIp: "198.51.100.7",
+      serverIp: "203.0.113.10",
       serverType: "public",
       joinedAt: Date.parse("2026-07-25T01:22:25.000Z"),
     });

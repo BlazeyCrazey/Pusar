@@ -4,13 +4,35 @@ import { app, session, type BrowserWindow } from "electron";
 import { randomUUID } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { getUserHeadshots } from "../core/robloxApi";
 import { ensureRobloxReachable } from "./robloxWeb";
 import { runLoginWindow } from "./loginWindow";
 import { errorMessage, log } from "./logger";
+import { readPrefs } from "./prefs";
 import { RobloxSessionClient } from "./sessionClient";
-import type { AddAccountResult, HbaDiagnosis, StoredAccount } from "../shared/types";
+import type { AccountOverview, AddAccountResult, HbaDiagnosis, StoredAccount } from "../shared/types";
 
 const storePath = () => path.join(app.getPath("userData"), "accounts.json");
+
+const headshots = new Map<number, string>();
+
+export function activeAccount(): StoredAccount | undefined {
+  const accounts = listAccounts();
+  const { activeAccountId } = readPrefs();
+  return accounts.find((account) => account.id === activeAccountId) ?? accounts[0];
+}
+
+export async function accountOverview(): Promise<AccountOverview> {
+  const accounts = listAccounts();
+  const missing = accounts.map((account) => account.userId).filter((userId) => !headshots.has(userId));
+  for (const [userId, url] of await getUserHeadshots(missing)) headshots.set(userId, url);
+
+  const active = activeAccount();
+  return {
+    accounts: accounts.map((account) => ({ ...account, avatarUrl: headshots.get(account.userId) })),
+    activeAccountId: active?.id ?? null,
+  };
+}
 
 export function listAccounts(): StoredAccount[] {
   try {

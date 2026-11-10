@@ -78,8 +78,8 @@ export function reduceActivity(state: ActivityState, event: LogEvent, now = Date
       if (state.placeId !== event.placeId) return state;
       return { ...state, universeId: event.universeId };
     case "udmux":
-      // The RCC address is the real game server; UDMUX is a proxy in front of it.
-      return { ...state, serverIp: event.rccIp };
+      // The RCC address is private (10.x). Only the relay in front of it can be located.
+      return { ...state, serverIp: event.udmuxIp };
     case "joined":
       if (state.status === "idle") return state;
       return {

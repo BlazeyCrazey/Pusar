@@ -7,15 +7,17 @@ interface TextFieldProps extends ComponentProps<"input"> {
   error?: string;
   /** For IDs, flags and other values read character by character. */
   mono?: boolean;
+  /** Keeps the label for screen readers when the row around it already explains the field. */
+  hideLabel?: boolean;
 }
 
-export function TextField({ label, hint, error, mono = false, className, ...rest }: TextFieldProps) {
+export function TextField({ label, hint, error, mono = false, hideLabel = false, className, ...rest }: TextFieldProps) {
   const id = useId();
   const noteId = `${id}-note`;
   const note = error ?? hint;
   return (
     <div className={[styles.field, className].filter(Boolean).join(" ")}>
-      <label className={styles.label} htmlFor={id}>
+      <label className={hideLabel ? "sr-only" : styles.label} htmlFor={id}>
         {label}
       </label>
       <input

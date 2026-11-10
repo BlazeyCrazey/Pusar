@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
-import type { RobloxInstall, StoredAccount } from "../../../shared/types";
-import { call } from "../api";
+import { Progress } from "../components/Progress";
+import { useApp, type Loaded } from "../store";
+import type { AccountOverview, RobloxInstall } from "../../../shared/types";
 import styles from "./StatusBar.module.css";
-
-type Loaded<T> = { state: "loading" } | { state: "ready"; value: T } | { state: "error" };
 
 function shortVersion(versionId: string | null): string {
   return versionId ? versionId.replace(/^version-/, "").slice(0, 8) : "unknown version";
@@ -19,7 +17,7 @@ function RobloxStatus({ installs }: { installs: Loaded<RobloxInstall[]> }) {
       </span>
     );
   }
-  const current = installs.value[0];
+  const [current] = installs.value;
   if (!current) {
     return (
       <span className={styles.item}>
@@ -36,32 +34,31 @@ function RobloxStatus({ installs }: { installs: Loaded<RobloxInstall[]> }) {
   );
 }
 
-function accountLabel(accounts: Loaded<StoredAccount[]>): string {
-  if (accounts.state !== "ready") return "";
-  const [first] = accounts.value;
-  if (!first) return "No account added";
-  return accounts.value.length === 1 ? `@${first.username}` : `${accounts.value.length} accounts`;
+function accountLabel(overview: Loaded<AccountOverview>): string {
+  if (overview.state !== "ready") return "";
+  const { accounts, activeAccountId } = overview.value;
+  const active = accounts.find((account) => account.id === activeAccountId);
+  return active ? `@${active.username}` : "No account added";
 }
 
 export function StatusBar() {
-  const [installs, setInstalls] = useState<Loaded<RobloxInstall[]>>({ state: "loading" });
-  const [accounts, setAccounts] = useState<Loaded<StoredAccount[]>>({ state: "loading" });
-
-  useEffect(() => {
-    call("install:detect").then(
-      (value) => setInstalls({ state: "ready", value }),
-      () => setInstalls({ state: "error" }),
-    );
-    call("accounts:list").then(
-      (value) => setAccounts({ state: "ready", value }),
-      () => setAccounts({ state: "error" }),
-    );
-  }, []);
+  const installs = useApp((state) => state.installs);
+  const overview = useApp((state) => state.overview);
+  const launchingGame = useApp((state) => state.launchingGame);
+  const instanceStatus = useApp((state) => state.instance.status);
+  const region = useApp((state) => state.activity?.region);
 
   return (
     <footer className={styles.bar}>
+      {launchingGame && (
+        <div className={styles.progress}>
+          <Progress label={`Starting ${launchingGame}`} />
+        </div>
+      )}
       <RobloxStatus installs={installs} />
-      <span className={styles.item}>{accountLabel(accounts)}</span>
+      {launchingGame && <span className={styles.item}>Starting {launchingGame}</span>}
+      {!launchingGame && instanceStatus === "running" && <span className={styles.item}>In game{region && ` · ${region}`}</span>}
+      <span className={styles.item}>{accountLabel(overview)}</span>
     </footer>
   );
 }

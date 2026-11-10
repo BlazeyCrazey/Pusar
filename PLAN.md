@@ -2,7 +2,7 @@
 
 A Roblox launcher, **Windows first, macOS later**. It handles accounts, a game library, mods (FFlags and content swaps) and Discord presence, with a polished UI.
 
-_Last updated: 2026-11-08_
+_Last updated: 2026-11-09_
 
 ---
 
@@ -151,7 +151,8 @@ Fake launchers that steal cookies are common Roblox malware, so users will be su
   - Flags load only when a Roblox process starts, and Roblox keeps a background tray process that handles later launches. After a flag change, restart that process, but never one running a game (found in M0).
 - **Content swaps:**
   - Fonts, cursors, the classic death sound, and textures where allowed.
-  - A mod pack is a folder or zip with a `manifest.json` (id, name, version, target paths, platforms).
+  - A mod pack is a folder or zip with a `manifest.json` (id, name, version, optional author and platforms) and a `content/` folder mirroring Roblox's own. Only images, fonts and sounds are accepted.
+  - Pusar doesn't bundle third-party assets such as the old death sound. Packs bring their own.
   - Apply means copying files in after backing up the originals, and revert restores the backups. Keep checksums so Pusar notices when a Roblox update overwrites a mod and reapplies it.
 - **Activity:** Watch Roblox's log files for the place ID, job ID and server IP. Use them for Discord Rich Presence and to show the server's region.
 - **Launch options:** close the launcher or minimize to tray on launch, and per-game profiles.
@@ -261,11 +262,11 @@ _Exit criteria:_ all three work on Windows. If not, revisit this plan. **Met on 
 
 **M1: Foundation.** Repo, electron-vite, strict TypeScript, linting, the CI matrix, test harness, typed IPC, security baseline, design tokens and base components. **Done on 2026-11-08**, except that the CI workflow hasn't run yet because the project has no GitHub repo. The M0 test panel (`npm run spike`) stays until real screens replace it, and it doesn't ship in packaged builds.
 
-**M2: Accounts and launching.** Add, remove and switch accounts; search for and launch games; join by link; the `roblox-player:` handler on Windows.
+**M2: Accounts and launching.** Add, remove and switch accounts; search for and launch games; join by link; the `roblox-player:` handler on Windows. **Built on 2026-11-08**; live checks with a real account are listed in [docs/M0-SPIKES.md](docs/M0-SPIKES.md). Game links, place IDs and specific-server links work. Private server and `roblox.com/share` links show a clear "not supported yet" message, because their join flow needs a real private server to test against.
 
-**M3: Mods.** FFlag editor with the allowlist, mod packs, apply/revert, reapply after Roblox updates, presets.
+**M3: Mods.** FFlag editor with the allowlist, mod packs, apply/revert, reapply after Roblox updates, presets. **Built on 2026-11-09**, tested against a fake Roblox install; live checks are listed in [docs/M0-SPIKES.md](docs/M0-SPIKES.md).
 
-**M4: Extras.** Discord RPC, server region, library (recent, favorites, friends), settings, tray.
+**M4: Extras.** Discord RPC, server region, library (recent, favorites, friends), settings, tray. **Built on 2026-11-09**, tested against a fake Roblox install and simulated replies; live checks are listed in [docs/M0-SPIKES.md](docs/M0-SPIKES.md). The friends list hasn't yet run against real Roblox replies. Per-game profiles (§6) are still to do. Discord needs an application ID pasted into Settings until Pusar ships with its own.
 
 **M5: Polish.** A full UI pass, onboarding, empty and error states, accessibility, and strings ready for translation.
 
@@ -285,6 +286,7 @@ _Exit criteria:_ all three work on Windows. If not, revisit this plan. **Met on 
 | macOS rejects a modified Roblox bundle (later) | macOS mods don't work | Test first when macOS work starts, study AppleBlox, fall back to FFlags-only on macOS |
 | Roblox objects to the launcher | Takedown or breakage | No injection, login optional, open source, follow Roblox brand rules (no "Roblox" in the product name) |
 | Users think it's a cookie stealer | Nobody installs it | Open source, code signing, published trust rules (§5.7) |
+| Roblox rate-limits its web APIs | Search fails. Anonymous search allows one request per 60 seconds (measured 2026-11-09), and `Retry-After` understates it | Search through the signed-in session like roblox.com does, read `x-ratelimit-reset`, cache results, and say so honestly when limited |
 | Roblox's human check gets stuck in Pusar's sign-in window | Password sign-in fails for some users | Users complete checks themselves and Pusar never automates or disguises itself. Point users to Email a code or QR code (confirmed working). Real-browser sign-in is a last resort because the device key would stay in that browser. |
 | Confusion with "Pulsar Client" (Minecraft) | Search and branding friction | Always say "Pusar Launcher", use a distinct logo |
 

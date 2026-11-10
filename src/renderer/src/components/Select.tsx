@@ -10,13 +10,15 @@ interface SelectProps {
   options: Array<{ value: string; label: string }>;
   placeholder?: string;
   disabled?: boolean;
+  /** Keeps the label for screen readers when the row around it already explains the field. */
+  hideLabel?: boolean;
 }
 
-export function Select({ label, value, onChange, options, placeholder, disabled }: SelectProps) {
+export function Select({ label, value, onChange, options, placeholder, disabled, hideLabel }: SelectProps) {
   const labelId = useId();
   return (
     <div className={styles.field}>
-      <span id={labelId} className={styles.label}>
+      <span id={labelId} className={hideLabel ? "sr-only" : styles.label}>
         {label}
       </span>
       <RadixSelect.Root value={value} onValueChange={onChange} disabled={disabled}>

@@ -88,6 +88,47 @@ macOS is deferred. The macOS code paths stay in the repo but have never run on a
 
 ---
 
+## M2 live checks (needs a real account)
+
+Automated tests stub out Roblox, so these can only be confirmed by hand. Use the VPN if Roblox is blocked on your network.
+
+Confirmed from source on 2026-11-09:
+- **Launch speed:** about 2 seconds from pressing Launch to starting Roblox, down from 6–9, and still `via page` with `signed=true`.
+- **Kill Instance:** replaced Launch after launching, warned first, closed Roblox, and Launch came back.
+
+Items 2 to 5 below are still open.
+
+**Search:** Roblox allows one anonymous search per minute (`x-ratelimit-limit: 1, 1;w=60`). Search now goes through the active account's session. The signed-in limit hasn't been measured yet: search a few times in a row and look for `Search: signed in, HTTP 200` in the log.
+
+From source (`npm start`):
+1. **Launch speed:** press Launch. The hidden Roblox page now skips images and scripts, so the ticket should arrive in about a second. The log should still say `via page` and `signed=true`.
+2. **Accounts:** add a second account if you have one, switch between them, and confirm the game opens as the selected account.
+3. **Sign-out:** remove an account and look for `Sign-out: Roblox replied HTTP 200` in the log.
+
+From the installed build (`npm run package:dir`, then run `release\win-unpacked\Pusar.exe`):
+4. **Encrypted sign-in:** add an account and launch a game. This is the first real test of cookie encryption.
+5. **Link handler:** turn on **Open Roblox links with Pusar** in Settings, press Play on a game at roblox.com, and confirm Roblox starts. Turn it off and confirm Play still works.
+
+## M3 live checks (needs real Roblox)
+
+Automated tests apply mods to a fake Roblox folder, so these need a real game:
+1. **FFlags without quitting the tray:** turn on **Gray sky** and launch a game. The log should say Pusar restarted Roblox's background process, and the sky should be gray.
+2. **Turning it off:** turn off **Gray sky** and launch again. The sky should be back to normal.
+3. **Font:** choose a font and launch. Then choose **Use default** and launch again.
+4. **Untested presets:** try each one. Any that visibly work can be marked `confirmed` in `src/core/fflags.ts`.
+5. **Roblox update:** after Roblox next updates, your mods should still be there the first time you launch.
+
+## M4 live checks (needs real Roblox)
+
+Automated tests stub Roblox, Discord and the tray's game events, so these need the real thing:
+1. **Closing with Roblox open:** run `npm start`, launch a game and close Pusar while still in it. The log should end with `Pusar closed`, the terminal should come back within a couple of seconds, and Roblox should keep running.
+2. **Friends:** open Library with friends online. Names, pictures and games should appear, and **Join** should put you in their server. If the list fails, the log says which Roblox host refused and with what status. This is the first time these requests meet real replies.
+3. **Recently played:** launch a game, then open Library. It should be listed.
+4. **Discord:** in Settings, turn on **Show your game on Discord**, paste an application ID and launch. Your profile should show the game. Press Kill Instance and it should clear within about 15 seconds.
+5. **Server location:** turn on **Show where the server is** and join a game. The game's page and the status bar should show a city and country.
+6. **Tray:** set **When a game starts** to **Hide Pusar in the tray** and launch. The window should go and a tray icon appear. Leaving the game should bring the window back. Check the icon's **Open Pusar** and **Quit Pusar** too.
+7. **Close on launch:** set it to **Close Pusar** and launch. Pusar should close and Roblox should keep running.
+
 ## How to run
 
 ```bash

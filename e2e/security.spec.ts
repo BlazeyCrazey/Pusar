@@ -47,7 +47,7 @@ test.describe("security baseline", () => {
 
   test("the bridge exposes only the typed API", async () => {
     const keys = await running.page.evaluate(() => Object.keys(window.pusar).sort());
-    expect(keys).toEqual(["invoke", "isDev", "onActivity", "onLog"]);
+    expect(keys).toEqual(["invoke", "isDev", "onActivity", "onInstance", "onLog"]);
   });
 
   test("responses carry the Content Security Policy", async () => {

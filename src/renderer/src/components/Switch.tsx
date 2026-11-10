@@ -1,9 +1,9 @@
 import * as RadixSwitch from "@radix-ui/react-switch";
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import styles from "./Switch.module.css";
 
 interface SwitchProps {
-  label: string;
+  label: ReactNode;
   description?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;

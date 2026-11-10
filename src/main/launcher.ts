@@ -21,6 +21,11 @@ export function openRobloxApp(install: RobloxInstall): void {
   start(install);
 }
 
+/** Passes a roblox-player: link from the OS straight through to Roblox. */
+export function openLaunchLink(install: RobloxInstall, link: string): void {
+  start(install, link);
+}
+
 export async function launchPlace(
   account: StoredAccount,
   install: RobloxInstall,

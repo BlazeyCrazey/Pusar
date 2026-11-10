@@ -1,11 +1,19 @@
 // Reads and writes ClientAppSettings.json (local FFlag overrides).
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { FlagStatus } from "../shared/types";
+import type { FlagKind, FlagStatus } from "../shared/types";
 import type { BackupStore } from "./backup";
 
 export type FlagValue = string | number | boolean;
 export type FlagMap = Record<string, FlagValue>;
+
+export interface ModPreset {
+  id: string;
+  label: string;
+  description: string;
+  confirmed: boolean;
+  flags: Record<string, string>;
+}
 
 /**
  * Roblox ignores local flags that are not on its allowlist. This is the full
@@ -44,6 +52,66 @@ export const FLAG_PRESETS: Record<string, { label: string; flags: FlagMap }> = {
 export function flagStatus(name: string): FlagStatus {
   return Object.hasOwn(ALLOWED_FLAGS, name) ? "allowed" : "unknown";
 }
+
+export function flagKind(name: string): FlagKind {
+  if (/^[DS]?FFlag/.test(name)) return "bool";
+  if (/^[DS]?F(?:Int|Log)/.test(name)) return "int";
+  return "string";
+}
+
+/** Returns what's wrong with a flag and value, or null if Roblox will accept them. */
+export function flagValueError(name: string, value: string): string | null {
+  if (flagStatus(name) !== "allowed") return `${name} isn't on Roblox's allowlist, so Roblox would ignore it.`;
+  const kind = flagKind(name);
+  if (kind === "bool" && value !== "True" && value !== "False") return `${name} must be True or False.`;
+  if (kind === "int" && !/^-?\d{1,10}$/.test(value)) return `${name} must be a whole number.`;
+  return null;
+}
+
+export const FLAG_DEFAULTS: Record<FlagKind, string> = { bool: "True", int: "0", string: "" };
+
+/**
+ * One-click tweaks, all built from allowlisted flags. Being on the allowlist
+ * doesn't guarantee a flag does anything (OpenGL didn't, in M0), so only presets
+ * seen working in a real game are marked confirmed.
+ */
+export const MOD_PRESETS: ModPreset[] = [
+  {
+    id: "gray-sky",
+    label: "Gray sky",
+    description: "Replaces the sky with flat gray.",
+    confirmed: true,
+    flags: { FFlagDebugSkyGray: "True" },
+  },
+  {
+    id: "still-grass",
+    label: "Still grass",
+    description: "Stops grass from swaying.",
+    confirmed: false,
+    flags: { FIntGrassMovementReducedMotionFactor: "0" },
+  },
+  {
+    id: "no-grass",
+    label: "No grass",
+    description: "Stops drawing grass, for more FPS.",
+    confirmed: false,
+    flags: { FIntFRMMinGrassDistance: "0", FIntFRMMaxGrassDistance: "0" },
+  },
+  {
+    id: "low-textures",
+    label: "Low textures",
+    description: "Uses the lowest texture quality, for more FPS.",
+    confirmed: false,
+    flags: { DFFlagTextureQualityOverrideEnabled: "True", DFIntTextureQualityOverride: "0" },
+  },
+  {
+    id: "no-antialiasing",
+    label: "No anti-aliasing",
+    description: "Turns off edge smoothing, for more FPS.",
+    confirmed: false,
+    flags: { FIntDebugForceMSAASamples: "0" },
+  },
+];
 
 /** Roblox's own files and Bloxstrap store every value as a string ("True", "60"). */
 export function serializeFlagValue(value: FlagValue): string {

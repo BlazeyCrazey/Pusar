@@ -1,0 +1,67 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  max-width: 1320px;
+  padding: var(--sp-5) var(--sp-6) var(--sp-6);
+}
+
+/* Lines the label up with the artwork, past the button's own padding. */
+.back {
+  margin: calc(var(--sp-1) * -1) 0 calc(var(--sp-2) * -1) calc(var(--sp-3) * -1);
+}
+
+.search {
+  position: relative;
+  max-width: 560px;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 11px;
+  left: 10px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 40px;
+  padding: 0 40px 0 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  font-size: var(--fs-15);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.searchInput::placeholder {
+  color: var(--text-3);
+}
+
+.searchInput:hover {
+  border-color: var(--text-3);
+}
+
+.searchInput:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.clear {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.sectionTitle {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-15);
+  font-weight: 600;
+}
+
+.message {
+  margin-bottom: var(--sp-3);
+  color: var(--text-2);
+  font-size: var(--fs-15);
+}

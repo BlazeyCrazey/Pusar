@@ -18,6 +18,7 @@ export function getMainWindow(): BrowserWindow | null {
 export function focusMainWindow(): void {
   const win = getMainWindow();
   if (!win) return;
+  if (!win.isVisible()) win.show();
   if (win.isMinimized()) win.restore();
   win.focus();
 }

@@ -16,7 +16,7 @@ test.describe("app shell", () => {
     const { page } = running;
     await expect(page).toHaveTitle("Pusar");
     await expect(page.getByRole("heading", { name: "Play", level: 1 })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Play" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("button", { name: "Play", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("contentinfo")).toContainText(/Roblox/);
     await expect(page.getByRole("contentinfo")).toContainText("No account added");
     await page.screenshot({ path: "test-results/shell-play.png" });

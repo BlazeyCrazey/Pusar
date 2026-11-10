@@ -5,20 +5,48 @@ import { BackupStore } from "../../core/backup";
 import { applyFlags, FLAG_PRESETS, flagStatus, readFlags } from "../../core/fflags";
 import { applyCustomFont } from "../../core/fonts";
 import type { RobloxInstall } from "../../core/install";
-import { parsePlaceTarget } from "../../core/launchUri";
+import { parsePlaceTarget, unsupportedLinkReason } from "../../core/launchUri";
 import { redact } from "../../core/redact";
+import { getGameDetails, getPopularGames } from "../../core/robloxApi";
 import { IPC_CHANNELS, type IpcChannel, type IpcInput, type IpcOutput, type IpcResult } from "../../shared/ipc";
-import { addAccount, clientFor, getAccount, listAccounts, removeAccount } from "../accounts";
+import { ROBLOX_BUSY, ROBLOX_UNREACHABLE } from "../../shared/messages";
+import { accountOverview, addAccount, clientFor, getAccount, listAccounts, removeAccount } from "../accounts";
 import { ActivityService } from "../activity";
+import { friendsOfActiveAccount } from "../friends";
+import { InstanceMonitor } from "../instanceMonitor";
 import { launchPlace, openRobloxApp } from "../launcher";
+import { libraryView, rememberLaunch, setGameFavorite } from "../library";
+import { linkHandlerStatus, setLinkHandler } from "../linkHandler";
 import { errorMessage, log, logHistory } from "../logger";
+import { mods, setModsApplyCheck } from "../mods";
 import { currentPlatform } from "../platform";
+import { readPrefs, updatePrefs } from "../prefs";
 import { ensureRobloxReachable } from "../robloxWeb";
+import { searchRoblox } from "../search";
 import { isTrustedSender } from "../security";
+import { applyLaunchBehavior, restoreFromTray } from "../tray";
 import { getMainWindow } from "../windows";
 import { inputSchemas } from "./schemas";
 
 type Handlers = { [C in IpcChannel]: (input: IpcInput<C>) => IpcOutput<C> | Promise<IpcOutput<C>> };
+
+/** Turns what the user typed into a place to launch, or explains why it can't be. */
+function parseTarget(input: string) {
+  const reason = unsupportedLinkReason(input);
+  if (reason) throw new Error(reason);
+  const target = parsePlaceTarget(input);
+  if (!target) throw new Error("Enter a place ID or a roblox.com game link");
+  return target;
+}
+
+const MODS_STARTUP_DELAY_MS = 2000;
+
+async function pickFile(title: string, filters: Electron.FileFilter[]): Promise<string | null> {
+  const window = getMainWindow();
+  if (!window) return null;
+  const pick = await dialog.showOpenDialog(window, { title, filters, properties: ["openFile"] });
+  return pick.canceled ? null : (pick.filePaths[0] ?? null);
+}
 
 const backupsRoot = () => path.join(app.getPath("userData"), "backups");
 const backupFor = (install: RobloxInstall) => BackupStore.forInstall(backupsRoot(), install.rootDir);
@@ -46,6 +74,33 @@ export function registerIpc(): void {
       });
     }
   });
+
+  const applyActivitySettings = () => {
+    const { discordEnabled, discordClientId, showServerRegion } = readPrefs();
+    return activity.configure({
+      discordClientId: discordEnabled && discordClientId ? discordClientId : undefined,
+      showRegion: showServerRegion === true,
+    });
+  };
+  // Set before the monitor starts, so a game that's already running is shown correctly.
+  applyActivitySettings().catch((err: unknown) => log(`Activity: ${errorMessage(err)}`));
+
+  const instances = new InstanceMonitor(
+    (state) => {
+      getMainWindow()?.webContents.send("instance", state);
+      if (state.status === "idle") {
+        activity.gameEnded();
+        restoreFromTray();
+      }
+    },
+    (event) => activity.feed(event),
+  );
+  setModsApplyCheck(() => instances.state.status === "idle");
+  instances
+    .start()
+    // Waits so a game that's already running is noticed before any files change.
+    .then(() => setTimeout(() => void mods().syncOnStartup(), MODS_STARTUP_DELAY_MS).unref())
+    .catch((err: unknown) => log(`Instance monitor: ${errorMessage(err)}`));
 
   const handlers: Handlers = {
     "install:detect": async () => {
@@ -112,11 +167,46 @@ export function registerIpc(): void {
       return result;
     },
 
+    "mods:overview": () => mods().overview(),
+    "mods:setEnabled": ({ enabled }) => mods().setEnabled(enabled),
+    "mods:addFlag": ({ name }) => mods().addFlag(name),
+    "mods:setFlag": ({ name, value }) => mods().setFlag(name, value),
+    "mods:removeFlag": ({ name }) => mods().removeFlag(name),
+    "mods:setPreset": ({ id, active }) => mods().setPreset(id, active),
+
+    "mods:chooseFont": async () => {
+      const file = await pickFile("Choose a font for Roblox", [{ name: "Fonts", extensions: ["ttf", "otf"] }]);
+      return file ? mods().chooseFont(file) : null;
+    },
+
+    "mods:clearFont": () => mods().clearFont(),
+
+    "mods:importPack": async () => {
+      const file = await pickFile("Choose a .zip, or the manifest.json in a mod pack folder", [
+        { name: "Mod packs", extensions: ["zip", "json"] },
+      ]);
+      return file ? mods().importPack(file) : null;
+    },
+
+    "mods:setPackEnabled": ({ id, enabled }) => mods().setPackEnabled(id, enabled),
+    "mods:removePack": ({ id }) => mods().removePack(id),
+
     "accounts:list": () => listAccounts(),
+
+    "accounts:overview": () => accountOverview(),
+
+    "accounts:setActive": ({ id }) => {
+      updatePrefs({ activeAccountId: getAccount(id).id });
+      return accountOverview();
+    },
 
     "accounts:add": async () => {
       const result = await addAccount(getMainWindow() ?? undefined);
-      if (result.account) record("login", { duplicate: !!result.duplicate, hba: result.diagnosis ?? null });
+      if (result.account) {
+        record("login", { duplicate: !!result.duplicate, hba: result.diagnosis ?? null });
+        // Someone adding an account almost always means to use it next.
+        updatePrefs({ activeAccountId: result.account.id });
+      }
       return result;
     },
 
@@ -142,15 +232,58 @@ export function registerIpc(): void {
       return result;
     },
 
+    "games:search": ({ query }) => searchRoblox(query),
+
+    "games:popular": async () => {
+      const games = await getPopularGames();
+      if (!games) throw new Error(ROBLOX_UNREACHABLE);
+      return games;
+    },
+
+    "games:resolve": async ({ input }) => {
+      const target = parseTarget(input);
+      const game = await getGameDetails(target.placeId);
+      if (!game) throw new Error("Roblox couldn't find that game.");
+      return { target, game };
+    },
+
+    "prefs:get": () => readPrefs(),
+
+    "prefs:set": async (changes) => {
+      const prefs = updatePrefs(changes);
+      await applyActivitySettings();
+      return prefs;
+    },
+
+    "library:get": () => libraryView(),
+
+    "library:setFavorite": ({ game, favorite }) => setGameFavorite(game, favorite),
+
+    "friends:list": () => friendsOfActiveAccount(),
+
+    "linkHandler:status": () => linkHandlerStatus(),
+
+    "linkHandler:set": ({ enabled }) => setLinkHandler(enabled),
+
+    "instance:state": () => instances.state,
+
+    "instance:kill": () => instances.kill(),
+
     "launch:place": async ({ accountId, rootDir, target }) => {
-      const parsed = parsePlaceTarget(target);
-      if (!parsed) throw new Error("Enter a place ID or a roblox.com game link");
+      // A second launch makes Roblox fail with "Authentication Failed: 429".
+      if (instances.state.status !== "idle") throw new Error("Roblox is already running. Kill that instance first.");
+      const parsed = parseTarget(target);
       const account = getAccount(accountId);
       const install = await findInstall(rootDir);
       await ensureRobloxReachable();
+      const warning = await mods().prepareLaunch(install);
       const result = await launchPlace(account, install, parsed);
+      instances.markLaunched(parsed.placeId, install.logsDir);
+      updatePrefs({ lastPlaceId: parsed.placeId });
+      rememberLaunch(parsed.placeId);
       record("launch", { placeId: parsed.placeId, withServer: !!parsed.jobId, ...result });
-      return result;
+      applyLaunchBehavior(readPrefs().onLaunch);
+      return warning ? { ...result, warning } : result;
     },
 
     "launch:app": async ({ rootDir }) => {
@@ -173,6 +306,8 @@ export function registerIpc(): void {
       log("Activity: stopped");
       return true as const;
     },
+
+    "activity:current": () => activity.current,
 
     "log:history": () => logHistory(),
 
@@ -199,11 +334,16 @@ export function registerIpc(): void {
         const handler = handlers[channel] as (value: unknown) => unknown;
         return { ok: true, data: await handler(input.data) };
       } catch (err) {
-        log(`Error (${channel}): ${errorMessage(err)}`);
+        // The UI retries these on its own, so logging each attempt would only be noise.
+        const message = errorMessage(err);
+        if (message !== ROBLOX_UNREACHABLE && message !== ROBLOX_BUSY) log(`Error (${channel}): ${message}`);
         return { ok: false, error: errorMessage(err) };
       }
     });
   }
 
-  app.on("before-quit", () => void activity.stop());
+  app.on("before-quit", () => {
+    void activity.stop();
+    instances.stop();
+  });
 }

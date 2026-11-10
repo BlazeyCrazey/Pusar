@@ -6,13 +6,15 @@ A Roblox launcher for Windows, with accounts, a game library, mods and Discord p
 
 | Command | What it does |
 |---|---|
-| `npm start` | Runs the app from source with live reload |
+| `npm start` | Runs the app from source with live reload. The terminal comes back when you close Pusar |
 | `npm run spike` | Opens the M0 test panel, which has the working sign-in, launch and mod tools |
 | `npm run check` | Runs lint, type checks, unit tests and end-to-end tests |
 | `npm run package:dir` | Builds the unpacked app into `release/win-unpacked` |
 | `npm run package` | Builds the Windows installer |
 
-End-to-end tests open real windows briefly. They use a throwaway profile, so they never touch your accounts.
+End-to-end tests open real windows briefly. They use a throwaway profile and stub out Roblox, so they never touch your accounts.
+
+Running from source keeps its data in `%APPDATA%\Pusar`, and the installed app uses `%APPDATA%\Pusar Launcher`. They can't share one, because installed builds encrypt cookies and source runs can't read those.
 
 ## Layout
 
@@ -35,6 +37,23 @@ ESLint enforces the rules above.
 3. Add its handler in `src/main/ipc/handlers.ts`.
 
 A missing piece is a compile error. The UI then uses `call("channel", input)` from `src/renderer/src/api.ts`.
+
+## Mod packs
+
+A pack is a folder or `.zip` with a `manifest.json` and a `content` folder that mirrors Roblox's own:
+
+```text
+my-pack/
+  manifest.json
+  content/
+    textures/Cursors/KeyboardMouse/ArrowCursor.png
+```
+
+```json
+{ "id": "my-pack", "name": "My Pack", "version": "1.0.0", "author": "You" }
+```
+
+Only `.png`, `.jpg`, `.jpeg`, `.ttf`, `.otf`, `.ogg`, `.mp3` and `.wav` files are accepted. Anything else in `content` makes Pusar refuse the whole pack. The `id` must be lowercase letters, numbers, dots, dashes or underscores.
 
 ## UI rules
 

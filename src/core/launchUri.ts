@@ -1,15 +1,37 @@
 // Builds the roblox-player: URI that RobloxPlayerBeta.exe / Roblox.app accept.
 // This is the same URI roblox.com hands to the OS when you press Play.
 import { randomInt, randomUUID } from "node:crypto";
+import type { PlaceTarget } from "../shared/types";
 
-export interface PlaceTarget {
-  placeId: string;
-  /** Specific server (gameInstanceId / jobId), optional. */
-  jobId?: string;
-}
+export type { PlaceTarget };
 
 const PLACE_ID = /^\d{1,20}$/;
 const JOB_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function parseRobloxUrl(text: string): URL | null {
+  let url: URL;
+  try {
+    url = new URL(text.includes("://") ? text : `https://${text}`);
+  } catch {
+    return null;
+  }
+  return /(^|\.)roblox\.com$/i.test(url.hostname) ? url : null;
+}
+
+/**
+ * Explains links Pusar recognizes but can't open yet, so they don't silently
+ * start a public server instead. Returns null for every other input.
+ */
+export function unsupportedLinkReason(input: string): string | null {
+  const url = parseRobloxUrl(input.trim());
+  if (!url) return null;
+  const isShareLink = /^\/share(\/|$)/i.test(url.pathname);
+  if (url.searchParams.has("privateServerLinkCode") || (isShareLink && url.searchParams.get("type") === "Server")) {
+    return "Private server links aren't supported yet.";
+  }
+  if (isShareLink) return "Roblox share links aren't supported yet. Open the game's page and copy that link instead.";
+  return null;
+}
 
 /**
  * Accepts a place ID ("606849621"), a game page link
@@ -20,13 +42,8 @@ export function parsePlaceTarget(input: string): PlaceTarget | null {
   const text = input.trim();
   if (PLACE_ID.test(text)) return { placeId: text };
 
-  let url: URL;
-  try {
-    url = new URL(text.includes("://") ? text : `https://${text}`);
-  } catch {
-    return null;
-  }
-  if (!/(^|\.)roblox\.com$/i.test(url.hostname)) return null;
+  const url = parseRobloxUrl(text);
+  if (!url) return null;
 
   const jobIdParam = url.searchParams.get("gameInstanceId") ?? url.searchParams.get("jobId");
   const jobId = jobIdParam && JOB_ID.test(jobIdParam) ? jobIdParam : undefined;

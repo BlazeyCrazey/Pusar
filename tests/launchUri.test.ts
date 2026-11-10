@@ -4,6 +4,7 @@ import {
   buildPlaceLauncherUrl,
   generateBrowserTrackerId,
   parsePlaceTarget,
+  unsupportedLinkReason,
 } from "../src/core/launchUri";
 
 const JOB = "0b5c2a8e-1f3d-4c6a-9e7b-2d4f6a8c0e1b";
@@ -84,4 +85,24 @@ describe("generateBrowserTrackerId", () => {
   it("returns 10-13 digits", () => {
     for (let i = 0; i < 50; i++) expect(generateBrowserTrackerId()).toMatch(/^\d{10,13}$/);
   });
+});
+
+describe("unsupportedLinkReason", () => {
+  it.each([
+    "https://www.roblox.com/games/1818/Name?privateServerLinkCode=123",
+    "https://www.roblox.com/share?code=abc&type=Server",
+  ])("explains private server links: %s", (link) => {
+    expect(unsupportedLinkReason(link)).toContain("Private server");
+  });
+
+  it("explains other share links", () => {
+    expect(unsupportedLinkReason("https://www.roblox.com/share?code=abc&type=ExperienceDetails")).toContain("share links");
+  });
+
+  it.each(["1818", "https://www.roblox.com/games/1818/Name", "tower defense", "https://evil.example/share?type=Server"])(
+    "says nothing about %s",
+    (input) => {
+      expect(unsupportedLinkReason(input)).toBeNull();
+    },
+  );
 });

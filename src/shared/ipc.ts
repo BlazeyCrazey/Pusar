@@ -2,13 +2,24 @@
 // without a matching input schema and handler is a compile error.
 import type {
   AccountDiagnosis,
+  AccountOverview,
   ActivityUpdate,
   AddAccountResult,
   FontApplyResult,
+  FriendsResult,
+  GameSummary,
+  InstanceState,
   LaunchResult,
+  Library,
+  LibraryGame,
+  LinkHandlerStatus,
+  ModsOverview,
   ModsStatus,
+  Prefs,
+  ResolvedGame,
   RevertResult,
   RobloxInstall,
+  Settings,
   StoredAccount,
 } from "./types";
 
@@ -18,17 +29,46 @@ export interface IpcChannels {
   "mods:applyFlags": { input: { rootDir: string; preset: string }; output: Record<string, string> };
   "mods:applyFont": { input: { rootDir: string }; output: FontApplyResult | null };
   "mods:revert": { input: { rootDir: string }; output: RevertResult };
+  "mods:overview": { input: void; output: ModsOverview };
+  "mods:setEnabled": { input: { enabled: boolean }; output: ModsOverview };
+  "mods:addFlag": { input: { name: string }; output: ModsOverview };
+  "mods:setFlag": { input: { name: string; value: string }; output: ModsOverview };
+  "mods:removeFlag": { input: { name: string }; output: ModsOverview };
+  "mods:setPreset": { input: { id: string; active: boolean }; output: ModsOverview };
+  /** Null when the file picker is cancelled. */
+  "mods:chooseFont": { input: void; output: ModsOverview | null };
+  "mods:clearFont": { input: void; output: ModsOverview };
+  /** Null when the file picker is cancelled. */
+  "mods:importPack": { input: void; output: ModsOverview | null };
+  "mods:setPackEnabled": { input: { id: string; enabled: boolean }; output: ModsOverview };
+  "mods:removePack": { input: { id: string }; output: ModsOverview };
   "accounts:list": { input: void; output: StoredAccount[] };
+  "accounts:overview": { input: void; output: AccountOverview };
+  "accounts:setActive": { input: { id: string }; output: AccountOverview };
   "accounts:add": { input: void; output: AddAccountResult };
   "accounts:remove": { input: { id: string }; output: StoredAccount[] };
   "accounts:diagnose": { input: { id: string }; output: AccountDiagnosis };
+  "games:search": { input: { query: string }; output: GameSummary[] };
+  "games:popular": { input: void; output: GameSummary[] };
+  "games:resolve": { input: { input: string }; output: ResolvedGame };
+  "prefs:get": { input: void; output: Prefs };
+  "prefs:set": { input: Partial<Settings>; output: Prefs };
+  "library:get": { input: void; output: Library };
+  "library:setFavorite": { input: { game: LibraryGame; favorite: boolean }; output: Library };
+  "friends:list": { input: void; output: FriendsResult };
+  "linkHandler:status": { input: void; output: LinkHandlerStatus };
+  "linkHandler:set": { input: { enabled: boolean }; output: LinkHandlerStatus };
   "launch:place": { input: { accountId: string; rootDir: string; target: string }; output: LaunchResult };
   "launch:app": { input: { rootDir: string }; output: true };
+  "instance:state": { input: void; output: InstanceState };
+  "instance:kill": { input: void; output: InstanceState };
   "activity:start": {
     input: { rootDir: string; discordClientId?: string; followExistingLog?: boolean };
     output: true;
   };
   "activity:stop": { input: void; output: true };
+  /** Null when no game is running. */
+  "activity:current": { input: void; output: ActivityUpdate | null };
   "log:history": { input: void; output: string[] };
   "spike:report": { input: void; output: string };
 }
@@ -46,14 +86,40 @@ const CHANNELS: Record<IpcChannel, true> = {
   "mods:applyFlags": true,
   "mods:applyFont": true,
   "mods:revert": true,
+  "mods:overview": true,
+  "mods:setEnabled": true,
+  "mods:addFlag": true,
+  "mods:setFlag": true,
+  "mods:removeFlag": true,
+  "mods:setPreset": true,
+  "mods:chooseFont": true,
+  "mods:clearFont": true,
+  "mods:importPack": true,
+  "mods:setPackEnabled": true,
+  "mods:removePack": true,
   "accounts:list": true,
+  "accounts:overview": true,
+  "accounts:setActive": true,
   "accounts:add": true,
   "accounts:remove": true,
   "accounts:diagnose": true,
+  "games:search": true,
+  "games:popular": true,
+  "games:resolve": true,
+  "prefs:get": true,
+  "prefs:set": true,
+  "library:get": true,
+  "library:setFavorite": true,
+  "friends:list": true,
+  "linkHandler:status": true,
+  "linkHandler:set": true,
   "launch:place": true,
   "launch:app": true,
+  "instance:state": true,
+  "instance:kill": true,
   "activity:start": true,
   "activity:stop": true,
+  "activity:current": true,
   "log:history": true,
   "spike:report": true,
 };
@@ -64,6 +130,7 @@ export const IPC_CHANNELS = Object.keys(CHANNELS) as IpcChannel[];
 export interface IpcEvents {
   log: string;
   activity: ActivityUpdate;
+  instance: InstanceState;
 }
 
 export interface PusarApi {
@@ -75,4 +142,5 @@ export interface PusarApi {
   ): Promise<IpcResult<IpcOutput<C>>>;
   onLog(callback: (line: IpcEvents["log"]) => void): () => void;
   onActivity(callback: (update: IpcEvents["activity"]) => void): () => void;
+  onInstance(callback: (state: IpcEvents["instance"]) => void): () => void;
 }

@@ -1,0 +1,73 @@
+.screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--sp-6);
+  align-items: start;
+  max-width: 1320px;
+  padding: var(--sp-6);
+}
+
+.games {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--fs-24);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sectionTitle {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-15);
+  font-weight: 600;
+}
+
+.message {
+  margin-bottom: var(--sp-3);
+  color: var(--text-2);
+}
+
+.friends {
+  padding-left: var(--sp-5);
+  border-left: 1px solid var(--line);
+}
+
+.friendList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.friend {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+}
+
+.friendText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.friendName,
+.friendStatus {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friendName {
+  font-weight: 600;
+}
+
+.friendStatus {
+  color: var(--text-3);
+  font-size: var(--fs-12);
+}

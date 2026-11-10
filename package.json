@@ -6,9 +6,9 @@
   "description": "Pusar Launcher",
   "main": "out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "start": "electron-vite dev",
-    "spike": "electron-vite dev -- --spike",
+    "dev": "node scripts/dev.mjs",
+    "start": "node scripts/dev.mjs",
+    "spike": "node scripts/dev.mjs -- --spike",
     "selftest": "electron-vite build && electron . --selftest",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.node.json --composite false && tsc --noEmit -p tsconfig.web.json --composite false",
@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@xhayper/discord-rpc": "^1.5.1",
+    "fflate": "^0.8.3",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -52,6 +53,7 @@
     "typescript": "~6.0",
     "typescript-eslint": "^8.72.1",
     "vite": "^8.3.6",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "zustand": "^5.1.0"
   }
 }

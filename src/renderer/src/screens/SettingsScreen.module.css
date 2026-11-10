@@ -1,0 +1,36 @@
+.screen {
+  max-width: 720px;
+  padding: var(--sp-6);
+}
+
+.title {
+  font-size: var(--fs-24);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.group {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--line);
+}
+
+.groupTitle {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-15);
+  font-weight: 600;
+}
+
+.field {
+  margin-top: var(--sp-3);
+}
+
+.spaced {
+  margin-top: var(--sp-4);
+}
+
+.note {
+  margin-top: var(--sp-2);
+  color: var(--text-3);
+  font-size: var(--fs-12);
+}

@@ -1,0 +1,57 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tile img,
+.tile > div {
+  transition: filter var(--dur-fast) var(--ease);
+}
+
+.tile:hover img,
+.tile:hover > div {
+  filter: brightness(1.12);
+}
+
+.name {
+  overflow: hidden;
+  margin-top: var(--sp-2);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.players {
+  color: var(--text-3);
+  font-size: var(--fs-12);
+}
+
+.loadingArt {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+}
+
+.loadingLine {
+  width: 60%;
+  height: 12px;
+  margin-top: var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+}
