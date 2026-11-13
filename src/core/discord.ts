@@ -5,6 +5,9 @@ import type { GameInfo, PresencePayload } from "../shared/types";
 
 export type { PresencePayload };
 
+/** Pusar's own application on Discord. It's public: every presence update carries it. */
+export const PUSAR_DISCORD_APP_ID = "1569113875360784444";
+
 const SERVER_LABEL = {
   public: "Public server",
   private: "Private server",

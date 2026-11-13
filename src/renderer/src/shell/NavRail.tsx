@@ -7,24 +7,25 @@ import {
   UsersIcon,
   type Icon,
 } from "@phosphor-icons/react";
+import { t, type MessageKey } from "../i18n";
 import { useApp, type ViewId } from "../store";
 import styles from "./NavRail.module.css";
 
 interface NavItem {
   id: ViewId;
-  label: string;
+  label: MessageKey;
   icon: Icon;
 }
 
 const MAIN_ITEMS: NavItem[] = [
-  { id: "play", label: "Play", icon: PlayIcon },
-  { id: "library", label: "Library", icon: SquaresFourIcon },
-  { id: "mods", label: "Mods", icon: PuzzlePieceIcon },
-  { id: "accounts", label: "Accounts", icon: UsersIcon },
+  { id: "play", label: "nav.play", icon: PlayIcon },
+  { id: "library", label: "nav.library", icon: SquaresFourIcon },
+  { id: "mods", label: "nav.mods", icon: PuzzlePieceIcon },
+  { id: "accounts", label: "nav.accounts", icon: UsersIcon },
 ];
 
-const SETTINGS_ITEM: NavItem = { id: "settings", label: "Settings", icon: GearSixIcon };
-const GALLERY_ITEM: NavItem = { id: "gallery", label: "Kit", icon: SwatchesIcon };
+const SETTINGS_ITEM: NavItem = { id: "settings", label: "nav.settings", icon: GearSixIcon };
+const GALLERY_ITEM: NavItem = { id: "gallery", label: "nav.kit", icon: SwatchesIcon };
 
 export function NavRail() {
   const active = useApp((state) => state.view);
@@ -39,12 +40,12 @@ export function NavRail() {
       onClick={() => setView(id)}
     >
       <ItemIcon size={22} />
-      <span>{label}</span>
+      <span>{t(label)}</span>
     </button>
   );
 
   return (
-    <nav className={styles.rail} aria-label="Main">
+    <nav className={styles.rail} aria-label={t("nav.label")}>
       <div className={styles.group}>{MAIN_ITEMS.map(renderItem)}</div>
       <div className={styles.group}>
         {window.pusar.isDev && renderItem(GALLERY_ITEM)}

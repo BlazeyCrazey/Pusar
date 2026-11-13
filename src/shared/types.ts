@@ -48,8 +48,26 @@ export type LaunchBehavior = "stay" | "tray" | "close";
 export interface Settings {
   onLaunch: LaunchBehavior;
   discordEnabled: boolean;
-  discordClientId: string;
   showServerRegion: boolean;
+  /** Set once the first-run setup is finished or skipped. */
+  onboarded: boolean;
+  /** Also install beta versions, which are GitHub pre-releases. */
+  betaUpdates: boolean;
+}
+
+/** unsupported: this build can't update itself, such as a run from source. */
+export type UpdateStatus =
+  | { state: "unsupported" }
+  | { state: "idle" }
+  | { state: "checking" }
+  | { state: "upToDate"; checkedAt: number }
+  | { state: "downloading"; version: string; percent: number }
+  | { state: "ready"; version: string }
+  | { state: "error" };
+
+export interface AboutInfo {
+  version: string;
+  electron: string;
 }
 
 export interface Prefs extends Partial<Settings> {
@@ -81,7 +99,7 @@ export interface Library {
   favorites: GameSummary[];
 }
 
-export type FriendStatus = "online" | "inGame" | "studio";
+export type FriendStatus = "online" | "inGame" | "studio" | "offline";
 
 export interface FriendView {
   userId: number;
@@ -93,6 +111,8 @@ export interface FriendView {
   gameName?: string;
   /** Only when Roblox says this server can be joined. */
   join?: { placeId: string; jobId: string };
+  /** For offline friends: when Pusar last saw them online, in ms. Roblox no longer shares this itself. */
+  lastSeen?: number;
 }
 
 export interface FriendsResult {

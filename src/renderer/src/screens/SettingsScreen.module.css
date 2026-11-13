@@ -34,3 +34,21 @@
   color: var(--text-3);
   font-size: var(--fs-12);
 }
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowText .note {
+  margin-top: 0;
+}

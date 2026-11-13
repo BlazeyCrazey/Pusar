@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatCompact, t } from "../../i18n";
 import styles from "./GameArt.module.css";
 
 function FadeInImage({ src }: { src: string }) {
@@ -32,8 +33,6 @@ export function GameArt({ src, name }: { src?: string; name: string }) {
   );
 }
 
-const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
-
 export function formatPlayers(count: number): string {
-  return `${compact.format(count)} playing`;
+  return t("game.playing", { players: formatCompact(count) });
 }

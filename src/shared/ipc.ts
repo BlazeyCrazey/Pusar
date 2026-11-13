@@ -4,6 +4,7 @@ import type {
   AccountDiagnosis,
   AccountOverview,
   ActivityUpdate,
+  AboutInfo,
   AddAccountResult,
   FontApplyResult,
   FriendsResult,
@@ -21,6 +22,7 @@ import type {
   RobloxInstall,
   Settings,
   StoredAccount,
+  UpdateStatus,
 } from "./types";
 
 export interface IpcChannels {
@@ -70,6 +72,12 @@ export interface IpcChannels {
   /** Null when no game is running. */
   "activity:current": { input: void; output: ActivityUpdate | null };
   "log:history": { input: void; output: string[] };
+  "app:about": { input: void; output: AboutInfo };
+  "update:status": { input: void; output: UpdateStatus };
+  "update:check": { input: void; output: UpdateStatus };
+  "update:install": { input: void; output: true };
+  /** Copies a report with names and credentials removed to the clipboard. */
+  "diagnostics:copy": { input: void; output: true };
   "spike:report": { input: void; output: string };
 }
 
@@ -121,6 +129,11 @@ const CHANNELS: Record<IpcChannel, true> = {
   "activity:stop": true,
   "activity:current": true,
   "log:history": true,
+  "app:about": true,
+  "update:status": true,
+  "update:check": true,
+  "update:install": true,
+  "diagnostics:copy": true,
   "spike:report": true,
 };
 
@@ -131,6 +144,7 @@ export interface IpcEvents {
   log: string;
   activity: ActivityUpdate;
   instance: InstanceState;
+  update: UpdateStatus;
 }
 
 export interface PusarApi {
@@ -143,4 +157,5 @@ export interface PusarApi {
   onLog(callback: (line: IpcEvents["log"]) => void): () => void;
   onActivity(callback: (update: IpcEvents["activity"]) => void): () => void;
   onInstance(callback: (state: IpcEvents["instance"]) => void): () => void;
+  onUpdate(callback: (status: IpcEvents["update"]) => void): () => void;
 }

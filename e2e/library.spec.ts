@@ -17,7 +17,7 @@ const openLibrary = async (page: Page) => {
 };
 
 const section = (page: Page, name: string) => page.getByRole("region", { name });
-const friends = (page: Page) => page.getByRole("complementary", { name: "Friends online" });
+const friends = (page: Page) => page.getByRole("complementary", { name: /^Friends/ });
 
 const savedLibrary = (userData: string) =>
   JSON.parse(readFileSync(path.join(userData, "library.json"), "utf8")) as { favorites: Array<{ placeId: string }> };
@@ -86,8 +86,11 @@ test.describe("friends", () => {
       { userId: 1, username: "ann", displayName: "Ann", status: "inGame", gameName: "Tower Game", join: { placeId: "1001", jobId: JOB } },
       { userId: 2, username: "bo", displayName: "Bo", status: "inGame" },
       { userId: 3, username: "cy", displayName: "Cy", status: "online" },
+      { userId: 4, username: "dee", displayName: "Dee", status: "offline", lastSeen: Date.now() - 3 * 24 * 3600_000 },
+      { userId: 5, username: "eli", displayName: "Eli", status: "offline" },
     ],
   };
+  const friendRows = (page: Page) => friends(page).getByRole("listitem");
 
   test("without an account, offers to add one", async () => {
     running = await launchApp();
@@ -98,12 +101,16 @@ test.describe("friends", () => {
     await expect(page.getByRole("heading", { name: "Accounts", level: 1 })).toBeVisible();
   });
 
-  test("lists who's online, with Join only where it's possible", async () => {
+  test("lists everyone, online first, with the online count and Join only where it's possible", async () => {
     running = await launchApp({ accounts: [seedAccount("a1", "player")] });
     const { app, page, problems } = running;
     await stubIpc(app, "friends:list", { ok: true, data: FRIENDS });
     await openLibrary(page);
 
+    await expect(friends(page).getByRole("heading", { name: "Friends (3)" })).toBeVisible();
+    await expect(friendRows(page)).toHaveText([/Ann/, /Bo/, /Cy/, /Dee/, /Eli/]);
+    await expect(friendRows(page).nth(3)).toContainText("Last seen 3 days ago");
+    await expect(friendRows(page).nth(4)).toContainText("Offline");
     await expect(friends(page)).toContainText("In Tower Game");
     await expect(friends(page)).toContainText("In a game");
     await expect(friends(page)).toContainText("Online");
@@ -138,12 +145,47 @@ test.describe("friends", () => {
     await expect(friends(page).getByRole("button", { name: "Join Ann" })).toBeDisabled();
   });
 
-  test("says when nobody is online", async () => {
+  test("says when the account has no friends", async () => {
     running = await launchApp({ accounts: [seedAccount("a1", "player")] });
     const { app, page } = running;
     await stubIpc(app, "friends:list", { ok: true, data: { signedIn: true, friends: [] } });
     await openLibrary(page);
-    await expect(friends(page)).toContainText("None of your friends are online");
+    await expect(friends(page).getByRole("heading", { name: "Friends (0)" })).toBeVisible();
+    await expect(friends(page)).toContainText("This account has no friends on Roblox yet.");
+  });
+
+  test("shows as many friends as fit, and the rest behind …", async () => {
+    running = await launchApp({ accounts: [seedAccount("a1", "player")] });
+    const { app, page } = running;
+    const many = Array.from({ length: 40 }, (_, i) => ({ userId: i + 1, username: `f${i}`, displayName: `Friend ${i + 1}`, status: "offline" }));
+    await stubIpc(app, "friends:list", { ok: true, data: { signedIn: true, friends: many } });
+    await openLibrary(page);
+
+    const more = friends(page).getByRole("button", { name: /^Show \d+ more friends$/ });
+    await expect(more).toHaveText("…");
+    const shown = await friendRows(page).count();
+    expect(shown).toBeGreaterThan(3);
+    expect(shown).toBeLessThan(40);
+    await expect(more).toHaveAccessibleName(`Show ${40 - shown} more friends`);
+    // Everything shown, the button included, fits without being cut off.
+    const panel = await friends(page).boundingBox();
+    const button = await more.boundingBox();
+    expect(button!.y + button!.height).toBeLessThanOrEqual(panel!.y + panel!.height + 1);
+
+    await more.click();
+    await expect(friendRows(page)).toHaveCount(40);
+    await expect(more).toHaveCount(0);
+  });
+
+  test("fits fewer friends in a shorter window", async () => {
+    running = await launchApp({ accounts: [seedAccount("a1", "player")] });
+    const { app, page } = running;
+    const many = Array.from({ length: 40 }, (_, i) => ({ userId: i + 1, username: `f${i}`, displayName: `Friend ${i + 1}`, status: "offline" }));
+    await stubIpc(app, "friends:list", { ok: true, data: { signedIn: true, friends: many } });
+    await openLibrary(page);
+    const tall = await friendRows(page).count();
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setSize(1240, 660));
+    await expect.poll(() => friendRows(page).count()).toBeLessThan(tall);
   });
 
   test("shows the reason when the list can't load", async () => {
@@ -180,23 +222,13 @@ test.describe("settings", () => {
     await expect(page.getByRole("combobox", { name: "When a game starts" })).toContainText("Hide Pusar in the tray");
   });
 
-  test("Discord asks for an application ID, and only saves a valid one", async () => {
+  test("the Discord switch is saved, and needs no setup", async () => {
     running = await launchApp();
     const { page, userData } = running;
     await openSettings(page);
-    const id = page.getByRole("textbox", { name: "Discord application ID" });
-    await expect(id).toHaveCount(0);
-
     await page.getByRole("switch", { name: /Show your game on Discord/ }).click();
     await expect.poll(() => prefs(userData).discordEnabled).toBe(true);
-
-    await id.fill("abc");
-    await expect(page.getByText("15 to 25 digits")).toBeVisible();
-    expect(prefs(userData).discordClientId).toBeUndefined();
-
-    await id.fill("123456789012345678");
-    await expect(page.getByText("15 to 25 digits")).toHaveCount(0);
-    await expect.poll(() => prefs(userData).discordClientId).toBe("123456789012345678");
+    await expect(page.getByRole("textbox")).toHaveCount(0);
   });
 
   test("server location is off until someone turns it on", async () => {

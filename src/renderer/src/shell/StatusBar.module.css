@@ -38,3 +38,23 @@
 .dot[data-tone="danger"] {
   background: var(--danger);
 }
+
+.end {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.update {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.update:hover {
+  color: var(--accent-hover);
+}

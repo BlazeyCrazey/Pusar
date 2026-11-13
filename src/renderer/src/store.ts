@@ -11,13 +11,15 @@ import type {
   LibraryGame,
   ResolvedGame,
   RobloxInstall,
+  UpdateStatus,
 } from "../../shared/types";
 import { call } from "./api";
+import { t } from "./i18n";
 
 /** How often to try again while Roblox can't be reached. */
 export const ROBLOX_RETRY_MS = 5000;
 
-export type ViewId = "play" | "library" | "mods" | "accounts" | "settings" | "gallery";
+export type ViewId = "welcome" | "play" | "library" | "mods" | "accounts" | "settings" | "gallery";
 
 export type Loaded<T> = { state: "loading" } | { state: "ready"; value: T } | { state: "error"; message: string };
 
@@ -30,6 +32,8 @@ const launchTarget = ({ target }: ResolvedGame) => (target.jobId ? serverLink(ta
 
 interface AppStore {
   view: ViewId;
+  /** False until the first screen is known, so Play doesn't flash before first-run setup. */
+  booted: boolean;
   installs: Loaded<RobloxInstall[]>;
   overview: Loaded<AccountOverview>;
   selected: ResolvedGame | null;
@@ -40,9 +44,14 @@ interface AppStore {
   /** The game being played, or null. */
   activity: ActivityUpdate | null;
   library: Loaded<Library>;
+  update: UpdateStatus;
 
   setView(view: ViewId): void;
   start(): Promise<void>;
+  /** Detects Roblox again, for when someone installs it while Pusar is open. */
+  detectInstalls(): Promise<void>;
+  /** Leaves first-run setup for good. */
+  finishSetup(): Promise<void>;
   refreshOverview(): Promise<void>;
   setActiveAccount(id: string): Promise<void>;
   addAccount(): Promise<AddAccountResult>;
@@ -60,6 +69,9 @@ interface AppStore {
   joinFriend(join: NonNullable<FriendView["join"]>): Promise<string | undefined>;
   killInstance(): Promise<void>;
   refreshLibrary(): Promise<void>;
+  checkForUpdates(): Promise<void>;
+  /** Restarts Pusar into the downloaded update. Roblox keeps running. */
+  installUpdate(): Promise<void>;
   setFavorite(game: LibraryGame, favorite: boolean): Promise<void>;
 }
 
@@ -69,6 +81,7 @@ let subscribedToInstance = false;
 
 export const useApp = create<AppStore>((set, get) => ({
   view: "play",
+  booted: false,
   installs: { state: "loading" },
   overview: { state: "loading" },
   selected: null,
@@ -76,6 +89,7 @@ export const useApp = create<AppStore>((set, get) => ({
   instance: { status: "idle" },
   activity: null,
   library: { state: "loading" },
+  update: { state: "unsupported" },
 
   setView: (view) => set({ view }),
 
@@ -84,19 +98,36 @@ export const useApp = create<AppStore>((set, get) => ({
       subscribedToInstance = true;
       window.pusar.onInstance((instance) => set({ instance }));
       window.pusar.onActivity((update) => set({ activity: update.state.status === "idle" ? null : update }));
+      window.pusar.onUpdate((update) => set({ update }));
     }
     call("instance:state").then((instance) => set({ instance }), () => {});
     call("activity:current").then((activity) => set({ activity }), () => {});
+    call("update:status").then((update) => set({ update }), () => {});
     void get().refreshLibrary();
 
-    call("install:detect").then(
-      (value) => set({ installs: { state: "ready", value } }),
-      (err: unknown) => set({ installs: { state: "error", message: messageOf(err) } }),
-    );
-    await get().refreshOverview();
+    void get().detectInstalls();
+    const [, prefs] = await Promise.all([get().refreshOverview(), call("prefs:get").catch(() => null)]);
 
-    const prefs = await call("prefs:get").catch(() => null);
+    // Someone who already added an account has clearly found their way around.
+    const { overview } = get();
+    const noAccounts = overview.state === "ready" && overview.value.accounts.length === 0;
+    if (!prefs?.onboarded && noAccounts) set({ view: "welcome" });
+    set({ booted: true });
+
     if (prefs?.lastPlaceId && !get().selected) void get().restoreLastGame(prefs.lastPlaceId);
+  },
+
+  async detectInstalls() {
+    try {
+      set({ installs: { state: "ready", value: await call("install:detect") } });
+    } catch (err) {
+      set({ installs: { state: "error", message: messageOf(err) } });
+    }
+  },
+
+  async finishSetup() {
+    await call("prefs:set", { onboarded: true });
+    set({ view: "play" });
   },
 
   async refreshOverview() {
@@ -168,7 +199,7 @@ export const useApp = create<AppStore>((set, get) => ({
       const installs = await call("install:detect");
       set({ installs: { state: "ready", value: installs } });
       const [install] = installs;
-      if (!install) throw new Error("Roblox isn't installed.");
+      if (!install) throw new Error(t("game.robloxMissingShort"));
       const result = await call("launch:place", { accountId, rootDir: install.rootDir, target: launchTarget(selected) });
       return result.warning;
     } finally {
@@ -180,6 +211,14 @@ export const useApp = create<AppStore>((set, get) => ({
     await get().selectGame(serverLink(placeId, jobId));
     set({ view: "play" });
     return get().launch();
+  },
+
+  async checkForUpdates() {
+    set({ update: await call("update:check") });
+  },
+
+  async installUpdate() {
+    await call("update:install");
   },
 
   async refreshLibrary() {

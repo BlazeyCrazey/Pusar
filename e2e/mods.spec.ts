@@ -149,7 +149,7 @@ test.describe("mod packs", () => {
     const { app, page } = running;
     await stubFilePicker(app, writePack("cool-cursors", "Cool Cursors", { "content/textures/Cursors/ArrowCursor.png": "modded-cursor" }));
     await page.getByRole("button", { name: "Import pack" }).click();
-    await expect(row(page, /^Cool Cursors/)).toContainText("v1.2 · by Someone · 1 files");
+    await expect(row(page, /^Cool Cursors/)).toContainText("v1.2 · by Someone · 1 file");
     expect(cursor()).toBe("modded-cursor");
   });
 

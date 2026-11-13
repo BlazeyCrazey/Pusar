@@ -122,12 +122,25 @@ Automated tests apply mods to a fake Roblox folder, so these need a real game:
 
 Automated tests stub Roblox, Discord and the tray's game events, so these need the real thing:
 1. **Closing with Roblox open:** run `npm start`, launch a game and close Pusar while still in it. The log should end with `Pusar closed`, the terminal should come back within a couple of seconds, and Roblox should keep running.
-2. **Friends:** open Library with friends online. Names, pictures and games should appear, and **Join** should put you in their server. If the list fails, the log says which Roblox host refused and with what status. This is the first time these requests meet real replies.
+2. **Friends:** open Library. Every friend should be listed, online ones first with their games, and the heading should count who's online. **Join** should put you in their server, and **…** should show the friends that didn't fit. Offline friends start as "Offline" and gain "Last seen" once Pusar has seen them online, because Roblox no longer shares real last-online times. If the list fails, the log says which Roblox host refused and with what status. This is the first time these requests meet real replies.
 3. **Recently played:** launch a game, then open Library. It should be listed.
-4. **Discord:** in Settings, turn on **Show your game on Discord**, paste an application ID and launch. Your profile should show the game. Press Kill Instance and it should clear within about 15 seconds.
+4. **Discord:** in Settings, turn on **Show your game on Discord** and launch. Your profile should show the game. Press Kill Instance and it should clear within about 15 seconds.
 5. **Server location:** turn on **Show where the server is** and join a game. The game's page and the status bar should show a city and country.
 6. **Tray:** set **When a game starts** to **Hide Pusar in the tray** and launch. The window should go and a tray icon appear. Leaving the game should bring the window back. Check the icon's **Open Pusar** and **Quit Pusar** too.
 7. **Close on launch:** set it to **Close Pusar** and launch. Pusar should close and Roblox should keep running.
+
+## M5 live checks
+
+1. **First run:** run the installed build (`npm run package:dir`, then `release\win-unpacked\Pusar.exe`) with no accounts. Setup should appear, find Roblox, and let you sign in and turn on Discord. After **Start using Pusar** it shouldn't appear again.
+2. **Icon:** the taskbar, the window and the tray should show the orange Pusar mark, not Electron's logo. So should the installer from `npm run package`.
+3. **Keyboard:** go through each screen with Tab alone. Every control should show a visible focus ring, and Enter or Space should work it.
+
+## M6 checks (need the GitHub repository)
+
+1. **First release:** follow [RELEASING.md](RELEASING.md) to publish a beta, install it, and confirm Settings → About says Pusar is up to date.
+2. **Update path:** publish a second beta, then confirm the first one downloads it, shows **Restart to update**, and comes back as the new version.
+3. **Signing:** once Trusted Signing is set up, the installer's properties should show the publisher, and SmartScreen shouldn't say "Unknown publisher".
+4. **Diagnostics:** press **Copy diagnostics** after signing in and launching a game, paste it somewhere, and check it has no account names, Windows user name or cookies.
 
 ## How to run
 

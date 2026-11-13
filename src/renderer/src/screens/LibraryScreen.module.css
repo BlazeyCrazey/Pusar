@@ -31,9 +31,26 @@
   color: var(--text-2);
 }
 
+/* Stays in view while the games scroll, and fills the window's height. */
 .friends {
+  position: sticky;
+  top: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  /* The 1px is the content area's top border. */
+  height: calc(100vh - var(--titlebar-h) - var(--statusbar-h) - var(--sp-6) * 2 - 1px);
   padding-left: var(--sp-5);
   border-left: 1px solid var(--line);
+}
+
+.friendArea {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.friendArea[data-expanded="true"] {
+  overflow-y: auto;
 }
 
 .friendList {
@@ -42,11 +59,26 @@
   list-style: none;
 }
 
+/* Matches FRIEND_ROW_PX in LibraryScreen.tsx. */
 .friend {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-2) 0;
+  height: 48px;
+}
+
+.friend[data-offline="true"] .friendName {
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.more {
+  width: 100%;
+  height: 48px;
+  justify-content: flex-start;
+  color: var(--text-2);
+  font-size: var(--fs-18);
+  letter-spacing: 0.1em;
 }
 
 .friendText {

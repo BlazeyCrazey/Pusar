@@ -7,10 +7,10 @@ import { Button } from "../components/Button";
 import { Dialog } from "../components/Dialog";
 import { IconButton } from "../components/IconButton";
 import { useToast } from "../components/Toast";
+import { messageOf } from "../errors";
+import { t, tRich } from "../i18n";
 import { useApp } from "../store";
 import styles from "./AccountsScreen.module.css";
-
-const messageOf = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 export function AccountsScreen() {
   const overview = useApp((state) => state.overview);
@@ -32,12 +32,14 @@ export function AccountsScreen() {
       const { account, duplicate } = await addAccount();
       if (account) {
         showToast({
-          title: duplicate ? `${account.displayName} was already added` : `Signed in as ${account.displayName}`,
+          title: duplicate
+            ? t("accounts.alreadyAdded", { name: account.displayName })
+            : t("accounts.signedIn", { name: account.displayName }),
           tone: "ok",
         });
       }
     } catch (err) {
-      showToast({ title: "Couldn't add that account", description: messageOf(err), tone: "error" });
+      showToast({ title: t("accounts.addFailed"), description: messageOf(err), tone: "error" });
     } finally {
       setAdding(false);
     }
@@ -47,7 +49,7 @@ export function AccountsScreen() {
     try {
       await setActiveAccount(account.id);
     } catch (err) {
-      showToast({ title: "Couldn't switch accounts", description: messageOf(err), tone: "error" });
+      showToast({ title: t("accounts.switchFailed"), description: messageOf(err), tone: "error" });
     }
   }
 
@@ -56,10 +58,10 @@ export function AccountsScreen() {
     setRemoving(true);
     try {
       await removeAccount(toRemove.id);
-      showToast({ title: `Removed ${toRemove.displayName}`, tone: "ok" });
+      showToast({ title: t("accounts.removed", { name: toRemove.displayName }), tone: "ok" });
       setToRemove(null);
     } catch (err) {
-      showToast({ title: "Couldn't remove that account", description: messageOf(err), tone: "error" });
+      showToast({ title: t("accounts.removeFailed"), description: messageOf(err), tone: "error" });
     } finally {
       setRemoving(false);
     }
@@ -68,17 +70,15 @@ export function AccountsScreen() {
   return (
     <section className={styles.screen}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Accounts</h1>
+        <h1 className={styles.title}>{t("accounts.title")}</h1>
         <Button variant="primary" icon={<PlusIcon size={16} />} loading={adding} onClick={() => void handleAdd()}>
-          Add account
+          {t("accounts.add")}
         </Button>
       </header>
 
       {overview.state === "error" && <p className={styles.error}>{overview.message}</p>}
 
-      {overview.state === "ready" && accounts.length === 0 && (
-        <p className={styles.empty}>Add your Roblox account to launch games from Pusar.</p>
-      )}
+      {overview.state === "ready" && accounts.length === 0 && <p className={styles.empty}>{t("accounts.empty")}</p>}
 
       {accounts.length > 0 && (
         <ul className={styles.list}>
@@ -87,17 +87,17 @@ export function AccountsScreen() {
               <Avatar name={account.displayName} src={account.avatarUrl} size={44} />
               <div className={styles.names}>
                 <span className={styles.displayName}>{account.displayName}</span>
-                <span className={styles.username}>@{account.username}</span>
+                <span className={styles.username}>{t("common.username", { username: account.username })}</span>
               </div>
               {account.id === activeId ? (
-                <Badge tone="ok">Active</Badge>
+                <Badge tone="ok">{t("accounts.active")}</Badge>
               ) : (
                 <Button variant="ghost" onClick={() => void handleUse(account)}>
-                  Use this account
+                  {t("accounts.use")}
                 </Button>
               )}
               <IconButton
-                label={`Remove ${account.displayName}`}
+                label={t("accounts.remove", { name: account.displayName })}
                 icon={<TrashIcon />}
                 onClick={() => setToRemove(account)}
               />
@@ -107,8 +107,10 @@ export function AccountsScreen() {
       )}
 
       <p className={styles.hint}>
-        You sign in on Roblox's own page, and your password never reaches Pusar. If the "verify you're human" check gets
-        stuck, choose <strong>Email a code</strong> or <strong>QR code</strong> on that page instead.
+        {tRich("accounts.hint", {
+          emailCode: <strong>{t("accounts.hintEmailCode")}</strong>,
+          qrCode: <strong>{t("accounts.hintQrCode")}</strong>,
+        })}
       </p>
 
       <Dialog
@@ -116,15 +118,15 @@ export function AccountsScreen() {
         onOpenChange={(open) => {
           if (!open && !removing) setToRemove(null);
         }}
-        title={`Remove ${toRemove?.displayName ?? "this account"}?`}
-        description="You'll be signed out of Roblox on this device."
+        title={t("accounts.removeTitle", { name: toRemove?.displayName ?? t("accounts.removeThisAccount") })}
+        description={t("accounts.removeBody")}
         actions={
           <>
             <Button variant="ghost" disabled={removing} onClick={() => setToRemove(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button variant="danger" loading={removing} onClick={() => void handleRemove()}>
-              Remove
+              {t("accounts.removeConfirm")}
             </Button>
           </>
         }

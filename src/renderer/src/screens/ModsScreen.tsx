@@ -10,6 +10,8 @@ import { Select } from "../components/Select";
 import { Switch } from "../components/Switch";
 import { TextField } from "../components/TextField";
 import { useToast } from "../components/Toast";
+import { messageOf } from "../errors";
+import { formatList, t } from "../i18n";
 import styles from "./ModsScreen.module.css";
 
 type Apply = (action: () => Promise<ModsOverview | null>) => Promise<void>;
@@ -17,12 +19,12 @@ type Apply = (action: () => Promise<ModsOverview | null>) => Promise<void>;
 function statusLine(overview: ModsOverview): { tone: string; text: string } {
   const { sync, enabled, flags, font, packs } = overview;
   if (sync.error) return { tone: "danger", text: sync.error };
-  if (sync.state === "noRoblox") return { tone: "warn", text: "Roblox isn't installed" };
-  if (sync.state === "pending") return { tone: "warn", text: "Saved. Applies the next time you launch." };
-  if (!enabled) return { tone: "neutral", text: "Off. Roblox is using its original files." };
-  if (flags.length === 0 && !font && !packs.some((pack) => pack.enabled)) return { tone: "neutral", text: "No mods active" };
-  const version = sync.versionId?.replace(/^version-/, "").slice(0, 8) ?? "";
-  return { tone: "ok", text: `Applied to Roblox ${version}`.trim() };
+  if (sync.state === "noRoblox") return { tone: "warn", text: t("mods.statusNoRoblox") };
+  if (sync.state === "pending") return { tone: "warn", text: t("mods.statusPending") };
+  if (!enabled) return { tone: "neutral", text: t("mods.statusOff") };
+  if (flags.length === 0 && !font && !packs.some((pack) => pack.enabled)) return { tone: "neutral", text: t("mods.statusNone") };
+  const version = sync.versionId?.replace(/^version-/, "").slice(0, 8);
+  return { tone: "ok", text: version ? t("mods.statusApplied", { version }) : t("mods.statusAppliedNoVersion") };
 }
 
 function FlagRow({ flag, apply }: { flag: ModFlagView; apply: Apply }) {
@@ -40,7 +42,7 @@ function FlagRow({ flag, apply }: { flag: ModFlagView; apply: Apply }) {
         {flag.kind === "bool" ? (
           <Select
             hideLabel
-            label={`Value of ${flag.name}`}
+            label={t("mods.flagValue", { name: flag.name })}
             value={flag.value}
             onChange={setValue}
             options={[
@@ -54,7 +56,7 @@ function FlagRow({ flag, apply }: { flag: ModFlagView; apply: Apply }) {
             key={flag.value}
             hideLabel
             mono
-            label={`Value of ${flag.name}`}
+            label={t("mods.flagValue", { name: flag.name })}
             defaultValue={flag.value}
             onBlur={(event) => setValue(event.target.value.trim())}
             onKeyDown={(event) => {
@@ -64,7 +66,7 @@ function FlagRow({ flag, apply }: { flag: ModFlagView; apply: Apply }) {
         )}
       </div>
       <IconButton
-        label={`Remove ${flag.name}`}
+        label={t("mods.remove", { name: flag.name })}
         icon={<TrashIcon />}
         onClick={() => void apply(() => call("mods:removeFlag", { name: flag.name }))}
       />
@@ -73,7 +75,13 @@ function FlagRow({ flag, apply }: { flag: ModFlagView; apply: Apply }) {
 }
 
 function PackRow({ pack, apply, onRemove }: { pack: ModPackView; apply: Apply; onRemove: () => void }) {
-  const details = [`v${pack.version}`, pack.author && `by ${pack.author}`, `${pack.fileCount} files`].filter(Boolean).join(" · ");
+  const details = [
+    t("mods.packVersion", { version: pack.version }),
+    pack.author && t("mods.packAuthor", { author: pack.author }),
+    t("mods.packFiles", { count: pack.fileCount }),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <li className={styles.row}>
       <div className={styles.grow}>
@@ -85,11 +93,11 @@ function PackRow({ pack, apply, onRemove }: { pack: ModPackView; apply: Apply; o
         />
         {pack.conflictsWith.length > 0 && (
           <div className={styles.conflict}>
-            <Badge tone="warn">{`Replaces the same files as ${pack.conflictsWith.join(", ")}`}</Badge>
+            <Badge tone="warn">{t("mods.packConflict", { packs: formatList(pack.conflictsWith) })}</Badge>
           </div>
         )}
       </div>
-      <IconButton label={`Remove ${pack.name}`} icon={<TrashIcon />} onClick={onRemove} />
+      <IconButton label={t("mods.remove", { name: pack.name })} icon={<TrashIcon />} onClick={onRemove} />
     </li>
   );
 }
@@ -101,7 +109,7 @@ export function ModsScreen() {
   const showToast = useToast();
 
   useEffect(() => {
-    call("mods:overview").then(setOverview, (err: unknown) => setLoadError(err instanceof Error ? err.message : String(err)));
+    call("mods:overview").then(setOverview, (err: unknown) => setLoadError(messageOf(err)));
   }, []);
 
   const apply: Apply = async (action) => {
@@ -109,27 +117,15 @@ export function ModsScreen() {
       const next = await action();
       if (next) setOverview(next);
     } catch (err) {
-      showToast({
-        title: "Couldn't change that",
-        description: err instanceof Error ? err.message : String(err),
-        tone: "error",
-      });
+      showToast({ title: t("mods.changeFailed"), description: messageOf(err), tone: "error" });
     }
   };
 
-  if (loadError) {
+  if (loadError || !overview) {
     return (
       <section className={styles.screen}>
-        <h1 className={styles.title}>Mods</h1>
-        <p className={styles.error}>{loadError}</p>
-      </section>
-    );
-  }
-
-  if (!overview) {
-    return (
-      <section className={styles.screen}>
-        <h1 className={styles.title}>Mods</h1>
+        <h1 className={styles.title}>{t("mods.title")}</h1>
+        {loadError && <p className={styles.error}>{loadError}</p>}
       </section>
     );
   }
@@ -139,10 +135,10 @@ export function ModsScreen() {
   return (
     <section className={styles.screen}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Mods</h1>
+        <h1 className={styles.title}>{t("mods.title")}</h1>
         <div className={styles.master}>
           <Switch
-            label="Use mods"
+            label={t("mods.useMods")}
             checked={overview.enabled}
             onChange={(enabled) => void apply(() => call("mods:setEnabled", { enabled }))}
           />
@@ -154,7 +150,7 @@ export function ModsScreen() {
       </p>
 
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Quick tweaks</h2>
+        <h2 className={styles.sectionTitle}>{t("mods.quickTweaks")}</h2>
         <ul className={styles.list}>
           {overview.presets.map((preset) => (
             <li key={preset.id} className={styles.row}>
@@ -163,7 +159,7 @@ export function ModsScreen() {
                   label={
                     <span className={styles.presetLabel}>
                       {preset.label}
-                      {!preset.confirmed && <Badge>Untested</Badge>}
+                      {!preset.confirmed && <Badge>{t("mods.untested")}</Badge>}
                     </span>
                   }
                   description={preset.description}
@@ -177,8 +173,8 @@ export function ModsScreen() {
       </div>
 
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>FFlags</h2>
-        <p className={styles.hint}>Roblox only reads these when it starts. Pusar restarts Roblox's background process for you at launch.</p>
+        <h2 className={styles.sectionTitle}>{t("mods.fflags")}</h2>
+        <p className={styles.hint}>{t("mods.fflagsHint")}</p>
         {overview.flags.length > 0 && (
           <ul className={styles.list}>
             {overview.flags.map((flag) => (
@@ -190,8 +186,8 @@ export function ModsScreen() {
           <div className={styles.addFlag}>
             <Select
               hideLabel
-              label="Add an FFlag"
-              placeholder="Add an FFlag"
+              label={t("mods.addFlag")}
+              placeholder={t("mods.addFlag")}
               // Always empty: picking a flag adds it and the menu resets.
               value=""
               onChange={(name) => void apply(() => call("mods:addFlag", { name }))}
@@ -202,13 +198,13 @@ export function ModsScreen() {
       </div>
 
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Font</h2>
+        <h2 className={styles.sectionTitle}>{t("mods.font")}</h2>
         <div className={styles.fontRow}>
-          <span className={styles.grow}>{overview.font ?? "Roblox's default fonts"}</span>
-          <Button onClick={() => void apply(() => call("mods:chooseFont"))}>Choose font</Button>
+          <span className={styles.grow}>{overview.font ?? t("mods.fontDefault")}</span>
+          <Button onClick={() => void apply(() => call("mods:chooseFont"))}>{t("mods.chooseFont")}</Button>
           {overview.font && (
             <Button variant="ghost" onClick={() => void apply(() => call("mods:clearFont"))}>
-              Use default
+              {t("mods.useDefaultFont")}
             </Button>
           )}
         </div>
@@ -216,11 +212,11 @@ export function ModsScreen() {
 
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Mod packs</h2>
-          <Button onClick={() => void apply(() => call("mods:importPack"))}>Import pack</Button>
+          <h2 className={styles.sectionTitle}>{t("mods.packs")}</h2>
+          <Button onClick={() => void apply(() => call("mods:importPack"))}>{t("mods.importPack")}</Button>
         </div>
         {overview.packs.length === 0 ? (
-          <p className={styles.hint}>Packs swap Roblox's images, fonts and sounds. Only import packs from people you trust.</p>
+          <p className={styles.hint}>{t("mods.packsEmpty")}</p>
         ) : (
           <ul className={styles.list}>
             {overview.packs.map((pack) => (
@@ -235,12 +231,12 @@ export function ModsScreen() {
         onOpenChange={(open) => {
           if (!open) setToRemove(null);
         }}
-        title={`Remove ${toRemove?.name ?? "this pack"}?`}
-        description="Roblox goes back to its original files for this pack. You'd need the original file to import it again."
+        title={t("mods.removePackTitle", { name: toRemove?.name ?? t("mods.removeThisPack") })}
+        description={t("mods.removePackBody")}
         actions={
           <>
             <Button variant="ghost" onClick={() => setToRemove(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="danger"
@@ -249,7 +245,7 @@ export function ModsScreen() {
                 setToRemove(null);
               }}
             >
-              Remove
+              {t("accounts.removeConfirm")}
             </Button>
           </>
         }

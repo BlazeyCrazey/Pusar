@@ -5,6 +5,8 @@ import { call } from "../../api";
 import { Button } from "../../components/Button";
 import { IconButton } from "../../components/IconButton";
 import { useToast } from "../../components/Toast";
+import { messageOf } from "../../errors";
+import { t } from "../../i18n";
 import { ROBLOX_RETRY_MS, useApp } from "../../store";
 import { GameGrid, GameGridLoading } from "./GameGrid";
 import { GameHero } from "./GameHero";
@@ -68,7 +70,7 @@ export function PlayScreen() {
           if (current) setResults({ query: searchQuery, games });
         },
         (err: unknown) => {
-          if (current) setResults({ query: searchQuery, error: err instanceof Error ? err.message : String(err) });
+          if (current) setResults({ query: searchQuery, error: messageOf(err) });
         },
       );
     }, SEARCH_DELAY_MS);
@@ -84,8 +86,8 @@ export function PlayScreen() {
       return true;
     } catch (err) {
       showToast({
-        title: "Couldn't open that game",
-        description: err instanceof Error ? err.message : String(err),
+        title: t("play.openFailed"),
+        description: messageOf(err),
         tone: "error",
       });
       return false;
@@ -108,10 +110,10 @@ export function PlayScreen() {
   if (selected) {
     return (
       <div className={styles.screen}>
-        <h1 className="sr-only">Play</h1>
+        <h1 className="sr-only">{t("play.title")}</h1>
         <div className={styles.back}>
           <Button variant="ghost" icon={<ArrowLeftIcon size={16} />} onClick={clearSelection}>
-            Back
+            {t("common.back")}
           </Button>
         </div>
         <GameHero selected={selected} />
@@ -121,14 +123,14 @@ export function PlayScreen() {
 
   return (
     <div className={styles.screen}>
-      <h1 className="sr-only">Play</h1>
+      <h1 className="sr-only">{t("play.title")}</h1>
 
       <form className={styles.search} role="search" onSubmit={handleSubmit}>
         <MagnifyingGlassIcon className={styles.searchIcon} size={18} />
         <input
           className={styles.searchInput}
-          aria-label="Search games, or paste a link or place ID"
-          placeholder="Search games, or paste a link or place ID"
+          aria-label={t("play.search")}
+          placeholder={t("play.search")}
           value={input}
           spellCheck={false}
           onChange={(event) => {
@@ -138,18 +140,18 @@ export function PlayScreen() {
         />
         {input && (
           <div className={styles.clear}>
-            <IconButton label="Clear search" icon={<XIcon size={16} />} onClick={() => setInput("")} />
+            <IconButton label={t("play.clearSearch")} icon={<XIcon size={16} />} onClick={() => setInput("")} />
           </div>
         )}
       </form>
 
       {showingSearch ? (
-        <section aria-label="Search results">
-          {linkMode && <p className={styles.message}>Press Enter to open this game.</p>}
+        <section aria-label={t("play.searchResults")}>
+          {linkMode && <p className={styles.message}>{t("play.pressEnter")}</p>}
           {searchQuery && !currentResults && <GameGridLoading />}
           {currentResults && "error" in currentResults && <p className={styles.message}>{currentResults.error}</p>}
           {currentResults && "games" in currentResults && currentResults.games.length === 0 && (
-            <p className={styles.message}>No games found for "{searchQuery}".</p>
+            <p className={styles.message}>{t("play.noResults", { query: searchQuery })}</p>
           )}
           {currentResults && "games" in currentResults && (
             <GameGrid games={currentResults.games} onPick={(game) => void open(game.placeId)} />
@@ -158,11 +160,11 @@ export function PlayScreen() {
       ) : (
         <section aria-labelledby="popular-title">
           <h2 id="popular-title" className={styles.sectionTitle}>
-            Top playing now
+            {t("play.topPlaying")}
           </h2>
           {popular && <GameGrid games={popular} onPick={(game) => void open(game.placeId)} />}
           {!popular && !popularFailed && <GameGridLoading />}
-          {popularFailed && !popular && <p className={styles.message}>Can't reach Roblox right now. Pusar will keep trying.</p>}
+          {popularFailed && !popular && <p className={styles.message}>{t("play.unreachable")}</p>}
         </section>
       )}
     </div>

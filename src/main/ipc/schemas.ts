@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { libraryGameSchema } from "../../core/library";
 import type { IpcChannel, IpcInput } from "../../shared/ipc";
-import { DISCORD_ID_PATTERN } from "../../shared/messages";
 
 const rootDir = z.string().min(1).max(1024);
 const id = z.string().min(1).max(64);
@@ -39,8 +38,9 @@ export const inputSchemas: { [C in IpcChannel]: z.ZodType<IpcInput<C>> } = {
   "prefs:set": z.strictObject({
     onLaunch: z.enum(["stay", "tray", "close"]).optional(),
     discordEnabled: z.boolean().optional(),
-    discordClientId: z.string().regex(DISCORD_ID_PATTERN).optional(),
     showServerRegion: z.boolean().optional(),
+    onboarded: z.boolean().optional(),
+    betaUpdates: z.boolean().optional(),
   }),
   "library:get": z.void(),
   "library:setFavorite": z.strictObject({ game: libraryGameSchema, favorite: z.boolean() }),
@@ -59,5 +59,10 @@ export const inputSchemas: { [C in IpcChannel]: z.ZodType<IpcInput<C>> } = {
   "activity:stop": z.void(),
   "activity:current": z.void(),
   "log:history": z.void(),
+  "app:about": z.void(),
+  "update:status": z.void(),
+  "update:check": z.void(),
+  "update:install": z.void(),
+  "diagnostics:copy": z.void(),
   "spike:report": z.void(),
 };

@@ -29,7 +29,7 @@ export default defineConfig(
   {
     files: ["scripts/**/*.mjs"],
     languageOptions: {
-      globals: { process: "readonly", console: "readonly", setInterval: "readonly", clearInterval: "readonly" },
+      globals: { process: "readonly", console: "readonly", setInterval: "readonly", clearInterval: "readonly", Buffer: "readonly" },
     },
   },
 

@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
+import iconPath from "../../resources/icon.png?asset";
 import { APP_ORIGIN } from "../core/appUrl";
 import { disposeAllClients } from "./accounts";
 import { devRendererUrl, isOwnPage } from "./security";
@@ -33,6 +34,8 @@ export function createMainWindow(options: { spikePanel: boolean }): BrowserWindo
     show: false,
     title: spikePanel ? "Pusar · M0 spike panel" : "Pusar",
     backgroundColor: WINDOW_BACKGROUND,
+    // Installed builds take the .exe's icon; this covers running from source.
+    icon: iconPath,
     autoHideMenuBar: true,
     // The real UI draws its own title bar. Windows still provides the
     // minimize/maximize/close buttons, so Snap Layouts keep working.

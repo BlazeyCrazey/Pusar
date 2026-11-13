@@ -2,7 +2,7 @@
 
 A Roblox launcher, **Windows first, macOS later**. It handles accounts, a game library, mods (FFlags and content swaps) and Discord presence, with a polished UI.
 
-_Last updated: 2026-11-09_
+_Last updated: 2026-11-12_
 
 ---
 
@@ -266,11 +266,11 @@ _Exit criteria:_ all three work on Windows. If not, revisit this plan. **Met on 
 
 **M3: Mods.** FFlag editor with the allowlist, mod packs, apply/revert, reapply after Roblox updates, presets. **Built on 2026-11-09**, tested against a fake Roblox install; live checks are listed in [docs/M0-SPIKES.md](docs/M0-SPIKES.md).
 
-**M4: Extras.** Discord RPC, server region, library (recent, favorites, friends), settings, tray. **Built on 2026-11-09**, tested against a fake Roblox install and simulated replies; live checks are listed in [docs/M0-SPIKES.md](docs/M0-SPIKES.md). The friends list hasn't yet run against real Roblox replies. Per-game profiles (§6) are still to do. Discord needs an application ID pasted into Settings until Pusar ships with its own.
+**M4: Extras.** Discord RPC, server region, library (recent, favorites, friends), settings, tray. **Built on 2026-11-09**, tested against a fake Roblox install and simulated replies; live checks are listed in [docs/M0-SPIKES.md](docs/M0-SPIKES.md). The friends list hasn't yet run against real Roblox replies. Per-game profiles (§6) are still to do. Discord presence uses Pusar's own Discord application (built in on 2026-11-11).
 
-**M5: Polish.** A full UI pass, onboarding, empty and error states, accessibility, and strings ready for translation.
+**M5: Polish.** A full UI pass, onboarding, empty and error states, accessibility, and strings ready for translation. **Built on 2026-11-11:** first-run setup, a real app and tray icon drawn from the logo mark (`node scripts/make-icons.mjs`), a pass over every screen's empty and error states, automated accessibility checks (axe, WCAG 2.1 AA) and screenshot comparisons for every screen, and all UI text moved into one catalog (`src/renderer/src/i18n/en.ts`) with a test that fails on text written straight into a component. Errors raised in the main process are still English sentences, so a second language would need those turned into codes first.
 
-**M6: Release (Windows).** Code signing, auto-update, beta program, a site on pusarlauncher.com, docs, and a public repo.
+**M6: Release (Windows).** Code signing, auto-update, beta program, a site on pusarlauncher.com, docs, and a public repo. **Started on 2026-11-12:** auto-update from GitHub releases with a beta channel, an About section with update controls and **Copy diagnostics** (account names and the Windows user name removed), a tag-triggered release workflow that signs with Microsoft Trusted Signing once it's set up, a bug report template, and [docs/RELEASING.md](docs/RELEASING.md). Still needs you: the GitHub repository, a license, the signing account, the pusarlauncher.com domain and site, and beta testers.
 
 **Later: macOS.** Run the macOS checklist in [docs/M0-SPIKES.md](docs/M0-SPIKES.md), starting with whether Roblox still launches from a modified app bundle. Then add macOS CI, QA and a notarized build.
 

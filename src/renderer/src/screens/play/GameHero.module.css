@@ -72,3 +72,10 @@
   color: var(--text-3);
   font-size: var(--fs-12);
 }
+
+.missing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}

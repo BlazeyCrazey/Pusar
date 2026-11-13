@@ -38,6 +38,11 @@ function createFakeRoblox(root: string): FakeRoblox {
   return { flagsFile: path.join(version, "ClientSettings", "ClientAppSettings.json"), familyFile, cursorFile };
 }
 
+function emptyFakeRoblox(root: string): FakeRoblox {
+  mkdirSync(root, { recursive: true });
+  return { flagsFile: "", familyFile: "", cursorFile: "" };
+}
+
 export interface SeedAccount {
   id: string;
   partition: string;
@@ -61,6 +66,10 @@ export interface LaunchOptions {
   library?: unknown;
   /** Start with Roblox unreachable. */
   offline?: boolean;
+  /** Show first-run setup, as a brand new user would see it. Off by default so tests start on Play. */
+  firstRun?: boolean;
+  /** Leave the fake Roblox folder empty, as on a PC without Roblox. */
+  robloxMissing?: boolean;
 }
 
 export async function setRobloxOnline(app: ElectronApplication, online: boolean): Promise<void> {
@@ -117,13 +126,15 @@ async function stubRobloxApis(app: ElectronApplication): Promise<void> {
 export async function launchApp(options: LaunchOptions = {}): Promise<RunningApp> {
   const userData = mkdtempSync(path.join(os.tmpdir(), "pusar-e2e-"));
   if (options.accounts) writeFileSync(path.join(userData, "accounts.json"), JSON.stringify(options.accounts));
-  if (options.prefs) writeFileSync(path.join(userData, "prefs.json"), JSON.stringify(options.prefs));
+  const prefs = { ...(options.firstRun ? {} : { onboarded: true }), ...options.prefs };
+  writeFileSync(path.join(userData, "prefs.json"), JSON.stringify(prefs));
   if (options.library) writeFileSync(path.join(userData, "library.json"), JSON.stringify(options.library));
 
   const fakeRoot = path.join(userData, "fake-roblox");
-  const fakeRoblox = createFakeRoblox(fakeRoot);
+  const fakeRoblox = options.robloxMissing ? emptyFakeRoblox(fakeRoot) : createFakeRoblox(fakeRoot);
   const app = await electron.launch({
-    args: [".", `--user-data-dir=${userData}`, `--fake-roblox-dir=${fakeRoot}`, ...(options.args ?? [])],
+    // Fixed scaling, so saved screenshots match on any display, CI included.
+    args: [".", `--user-data-dir=${userData}`, `--fake-roblox-dir=${fakeRoot}`, "--force-device-scale-factor=1", ...(options.args ?? [])],
   });
   const page = await app.firstWindow();
   const ready = options.ready ?? "nav[aria-label=Main]";

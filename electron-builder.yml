@@ -11,6 +11,9 @@ files:
   - "!out/renderer/assets/spike*"
 asar: true
 
+# Lets someone on a beta move to the next stable version (docs/RELEASING.md).
+generateUpdatesFilesForAllChannels: true
+
 # Hardens the Electron binary itself (PLAN.md §4).
 electronFuses:
   runAsNode: false
@@ -22,6 +25,7 @@ electronFuses:
   grantFileProtocolExtraPrivileges: false
 
 win:
+  icon: build/icon.ico
   target:
     - nsis
 

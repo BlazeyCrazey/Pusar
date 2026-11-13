@@ -2,6 +2,7 @@
 import { app, dialog, ipcMain } from "electron";
 import path from "node:path";
 import { BackupStore } from "../../core/backup";
+import { PUSAR_DISCORD_APP_ID } from "../../core/discord";
 import { applyFlags, FLAG_PRESETS, flagStatus, readFlags } from "../../core/fflags";
 import { applyCustomFont } from "../../core/fonts";
 import type { RobloxInstall } from "../../core/install";
@@ -12,7 +13,8 @@ import { IPC_CHANNELS, type IpcChannel, type IpcInput, type IpcOutput, type IpcR
 import { ROBLOX_BUSY, ROBLOX_UNREACHABLE } from "../../shared/messages";
 import { accountOverview, addAccount, clientFor, getAccount, listAccounts, removeAccount } from "../accounts";
 import { ActivityService } from "../activity";
-import { friendsOfActiveAccount } from "../friends";
+import { copyDiagnostics } from "../diagnostics";
+import { forgetFriends, friendsOfActiveAccount } from "../friends";
 import { InstanceMonitor } from "../instanceMonitor";
 import { launchPlace, openRobloxApp } from "../launcher";
 import { libraryView, rememberLaunch, setGameFavorite } from "../library";
@@ -25,6 +27,7 @@ import { ensureRobloxReachable } from "../robloxWeb";
 import { searchRoblox } from "../search";
 import { isTrustedSender } from "../security";
 import { applyLaunchBehavior, restoreFromTray } from "../tray";
+import { createUpdateService } from "../updater";
 import { getMainWindow } from "../windows";
 import { inputSchemas } from "./schemas";
 
@@ -76,14 +79,22 @@ export function registerIpc(): void {
   });
 
   const applyActivitySettings = () => {
-    const { discordEnabled, discordClientId, showServerRegion } = readPrefs();
+    const { discordEnabled, showServerRegion } = readPrefs();
     return activity.configure({
-      discordClientId: discordEnabled && discordClientId ? discordClientId : undefined,
+      discordClientId: discordEnabled ? PUSAR_DISCORD_APP_ID : undefined,
       showRegion: showServerRegion === true,
     });
   };
   // Set before the monitor starts, so a game that's already running is shown correctly.
   applyActivitySettings().catch((err: unknown) => log(`Activity: ${errorMessage(err)}`));
+
+  const updates = createUpdateService(
+    (status) => getMainWindow()?.webContents.send("update", status),
+    readPrefs().betaUpdates === true,
+  ).then((service) => {
+    service.start();
+    return service;
+  });
 
   const instances = new InstanceMonitor(
     (state) => {
@@ -212,6 +223,7 @@ export function registerIpc(): void {
 
     "accounts:remove": async ({ id }) => {
       await removeAccount(id);
+      forgetFriends(id);
       return listAccounts();
     },
 
@@ -252,6 +264,7 @@ export function registerIpc(): void {
     "prefs:set": async (changes) => {
       const prefs = updatePrefs(changes);
       await applyActivitySettings();
+      if (changes.betaUpdates !== undefined) (await updates).setBeta(changes.betaUpdates);
       return prefs;
     },
 
@@ -311,6 +324,23 @@ export function registerIpc(): void {
 
     "log:history": () => logHistory(),
 
+    "app:about": () => ({ version: app.getVersion(), electron: process.versions.electron ?? "" }),
+
+    "update:status": async () => (await updates).status,
+
+    "update:check": async () => (await updates).check(),
+
+    "update:install": async () => {
+      (await updates).install();
+      return true as const;
+    },
+
+    "diagnostics:copy": async () => {
+      await copyDiagnostics(instances.state.status);
+      log("Copied diagnostics to the clipboard");
+      return true as const;
+    },
+
     "spike:report": () =>
       redact(
         JSON.stringify(
@@ -345,5 +375,6 @@ export function registerIpc(): void {
   app.on("before-quit", () => {
     void activity.stop();
     instances.stop();
+    void updates.then((service) => service.stop());
   });
 }

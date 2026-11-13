@@ -11,6 +11,9 @@ A Roblox launcher for Windows, with accounts, a game library, mods and Discord p
 | `npm run check` | Runs lint, type checks, unit tests and end-to-end tests |
 | `npm run package:dir` | Builds the unpacked app into `release/win-unpacked` |
 | `npm run package` | Builds the Windows installer |
+| `node scripts/make-icons.mjs` | Redraws the app, installer and tray icons from the logo mark |
+
+Releases come from GitHub: pushing a version tag builds, signs and drafts a release, and installed copies update themselves. See [docs/RELEASING.md](docs/RELEASING.md).
 
 End-to-end tests open real windows briefly. They use a throwaway profile and stub out Roblox, so they never touch your accounts.
 
@@ -57,4 +60,8 @@ Only `.png`, `.jpg`, `.jpeg`, `.ttf`, `.otf`, `.ogg`, `.mp3` and `.wav` files ar
 
 ## UI rules
 
-Components use the tokens in `src/renderer/src/styles/tokens.css`, never raw values. PLAN.md §7 lists what makes a UI look AI-generated, and those patterns are banned. Running from source adds a **Kit** page to the nav with every token and component.
+Components use the tokens in `src/renderer/src/styles/tokens.css`, never raw values. All UI text comes from `src/renderer/src/i18n/en.ts` through `t()`, and a unit test fails on text written straight into a component. `e2e/screens.spec.ts` checks every screen with axe and against saved screenshots; after an intended visual change, refresh them with `npx playwright test e2e/screens.spec.ts --update-snapshots`. PLAN.md §7 lists what makes a UI look AI-generated, and those patterns are banned. Running from source adds a **Kit** page to the nav with every token and component.
+
+## License
+
+Copyright (c) 2026 BlazeyCrazey. All rights reserved. See [LICENSE](LICENSE). The open-source libraries and fonts Pusar uses keep their own licenses.

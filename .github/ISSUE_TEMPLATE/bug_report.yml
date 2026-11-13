@@ -1,0 +1,36 @@
+name: Bug report
+description: Something in Pusar doesn't work the way it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. Never paste a password, a .ROBLOSECURITY cookie or anything from your browser's developer tools here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: And what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we make it happen?
+      placeholder: |
+        1. Open Library
+        2. Press Join next to a friend
+        3. ...
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: In Pusar, open Settings and press **Copy diagnostics**, then paste here. It leaves out account names, your Windows user name and sign-in details.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2

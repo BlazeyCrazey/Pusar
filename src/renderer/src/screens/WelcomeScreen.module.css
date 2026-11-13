@@ -1,0 +1,73 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 600px;
+  padding: var(--sp-8) var(--sp-6) var(--sp-6);
+}
+
+.title {
+  margin-top: var(--sp-4);
+  font-size: var(--fs-32);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.lead {
+  margin-top: var(--sp-2);
+  color: var(--text-2);
+  font-size: var(--fs-15);
+}
+
+.steps {
+  align-self: stretch;
+  margin: var(--sp-6) 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.marker {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  font-weight: 600;
+}
+
+.marker[data-done="true"] {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.stepTitle {
+  font-size: var(--fs-15);
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.text {
+  margin-top: var(--sp-1);
+  color: var(--text-2);
+}
+
+.action {
+  margin-top: var(--sp-3);
+}
